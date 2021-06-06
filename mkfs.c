@@ -151,7 +151,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	size = (uint64_t)size;
 	unsigned int blocks_count = size / A1FS_BLOCK_SIZE;
 	unsigned int inode_bitmap_count = ceil_divide(opts->n_inodes, A1FS_BLOCK_SIZE * 8);
-	unsigned int block_bitmap_count = ceil_divide(blocks_count, A1FS_BLOCK_SIZE * 8));
+	unsigned int block_bitmap_count = ceil_divide(blocks_count, A1FS_BLOCK_SIZE * 8);
 	unsigned int inodes_count = opts->n_inodes;
 	unsigned int inode_table_count = ceil_divide((sizeof(struct a1fs_inode) * inodes_count), A1FS_BLOCK_SIZE);
 
