@@ -26,9 +26,9 @@
 #include "a1fs.h"
 #include "map.h"
 
-
 /** Command line options. */
-typedef struct mkfs_opts {
+typedef struct mkfs_opts
+{
 	/** File system image file path. */
 	const char *img_path;
 	/** Number of inodes. */
@@ -61,45 +61,60 @@ static void print_help(FILE *f, const char *progname)
 	fprintf(f, help_str, progname, A1FS_BLOCK_SIZE);
 }
 
-
 static bool parse_args(int argc, char *argv[], mkfs_opts *opts)
 {
 	char o;
-	while ((o = getopt(argc, argv, "i:hfvz")) != -1) {
-		switch (o) {
-			case 'i': opts->n_inodes = strtoul(optarg, NULL, 10); break;
+	while ((o = getopt(argc, argv, "i:hfvz")) != -1)
+	{
+		switch (o)
+		{
+		case 'i':
+			opts->n_inodes = strtoul(optarg, NULL, 10);
+			break;
 
-			case 'h': opts->help  = true; return true;// skip other arguments
-			case 'f': opts->force = true; break;
-			case 'z': opts->zero  = true; break;
+		case 'h':
+			opts->help = true;
+			return true; // skip other arguments
+		case 'f':
+			opts->force = true;
+			break;
+		case 'z':
+			opts->zero = true;
+			break;
 
-			case '?': return false;
-			default : assert(false);
+		case '?':
+			return false;
+		default:
+			assert(false);
 		}
 	}
 
-	if (optind >= argc) {
+	if (optind >= argc)
+	{
 		fprintf(stderr, "Missing image path\n");
 		return false;
 	}
 	opts->img_path = argv[optind];
 
-	if (opts->n_inodes == 0) {
+	if (opts->n_inodes == 0)
+	{
 		fprintf(stderr, "Missing or invalid number of inodes\n");
 		return false;
 	}
 	return true;
 }
 
-
 /** Determine if the image has already been formatted into a1fs. */
 static bool a1fs_is_present(void *image)
 {
 	//TODO: check if the image already contains a valid a1fs superblock
-	(void)image;
+	a1fs_superblock *sb = (a1fs_superblock *)image;
+	if (image == NULL || sb->magic != A1FS_MAGIC)
+	{
+		return false;
+	}
 	return true;
 }
-
 
 /**
  * Format the image into a1fs.
@@ -116,22 +131,77 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 {
 	//TODO: initialize the superblock and create an empty root directory
 	//NOTE: the mode of the root directory inode should be set to S_IFDIR | 0777
-	(void)image;
-	(void)size;
-	(void)opts;
-	return false;
-}
+	if (image == NULL || size == NULL || opts == NULL)
+	{
+		return false;
+	}
+	memset(image, 0, size);
+	uint64_t magic = A1FS_MAGIC;
+	size = (uint64_t)size;
+	a1fs_superblock *sb = (a1fs_superblock *)image;
+	sb->inode_bitmap_count = ceil(opts->n_inodes / (A1FS_BLOCK_SIZE * 8));
+	sb->block_bitmap_count = ceil(size / (A1FS_BLOCK_SIZE * A1FS_BLOCK_SIZE * 8));
+	sb->inode_table_count = ceil((sizeof(struct a1fs_inode) * inodes_count) / A1FS_BLOCK_SIZE);
+	sb->inode_count = opts->n_inodes;
 
+	sb->first_ino_bitmap = 1;
+	sb->first_blo_bitmap = sb->inode_bitmap_count + 1;
+	sb->first_ino = sb->first_blo_bitmap + sb->block_bitmap_count;
+	sb->first_data_block = sb->first_ino + sb->inode_table_count;
+
+	sb->blocks_count = size / A1FS_BLOCK_SIZE;
+	sb->free_blocks_count = sb->total_block - sb->inode_bitmap_count - sb->block_bitmap_count - sb->inode_table_count - 2;
+	sb->free_inodes_count = opts->n_inodes - 1;
+	if (sb->blocks_count < sb->inode_bitmap_count + sb->inode_table_count + sb->block_bitmap_count + 2)
+		return false;
+
+	memset(image + A1FS_BLOCK_SIZE, 0, (sb->inode_bitmap_count + sb->block_bitmap_count) * A1FS_BLOCK_SIZE);
+	int total = sb->inodes_bitmap_count + sb->block_bitmap_count + sb->inode_table_count + 1;
+	int total_byte = ceil(total / 8);
+	char *block_bitmap = (char *)(image + sb->first_blo_bitmap * A1FS_BLOCK_SIZE);
+	char *inode_bitmap = (char *)(image + sb->first_ino_bitmap * A1FS_BLOCK_SIZE);
+	for (int i = 0; i < total_byte; i++)
+	{
+		int bit = 0;
+		while (total >= 0 && bit < 8)
+		{
+			block_bitmap[i] |= 1 << bit;
+			bit++;
+			total--;
+		}
+	}
+	for (int i = 0; i < sb->inode_count)
+	{
+		a1fs_inode init_inode = {0};
+		memcpy(sizeof(struct a1fs_inode) * i + image + A1FS_BLOCK_SIZE * (1 + sb->inode_bitmap_count + sb->block_bitmap_count), &init_inode, sizeof(struct a1fs_inode))
+	}
+
+	struct a1fs_inode *root = (struct a1fs_inode *)(image + sb->first_ino * A1FS_BLOCK_SIZE);
+	root->mode = S_IFDIR | 0777;
+	root->links = 2;
+	root->size = 0;
+	clock_gettime(CLOCK_REALTIME, &(root->mtime));
+	root->inode = 0;
+	root->entry_count = 0;
+	root->num_extents = 0;
+	root->extent_table = sb->first_ino + sb->inode_table_count;
+	root->num_extents = 0;
+	inode_bitmap[0] |= 1 << 0;
+	block_bitmap[root->extent_table / 8]|= 1 << root->extent_table % 8
+	return true;
+}
 
 int main(int argc, char *argv[])
 {
-	mkfs_opts opts = {0};// defaults are all 0
-	if (!parse_args(argc, argv, &opts)) {
+	mkfs_opts opts = {0}; // defaults are all 0
+	if (!parse_args(argc, argv, &opts))
+	{
 		// Invalid arguments, print help to stderr
 		print_help(stderr, argv[0]);
 		return 1;
 	}
-	if (opts.help) {
+	if (opts.help)
+	{
 		// Help requested, print it to stdout
 		print_help(stdout, argv[0]);
 		return 0;
@@ -140,17 +210,21 @@ int main(int argc, char *argv[])
 	// Map image file into memory
 	size_t size;
 	void *image = map_file(opts.img_path, A1FS_BLOCK_SIZE, &size);
-	if (image == NULL) return 1;
+	if (image == NULL)
+		return 1;
 
 	// Check if overwriting existing file system
 	int ret = 1;
-	if (!opts.force && a1fs_is_present(image)) {
+	if (!opts.force && a1fs_is_present(image))
+	{
 		fprintf(stderr, "Image already contains a1fs; use -f to overwrite\n");
 		goto end;
 	}
 
-	if (opts.zero) memset(image, 0, size);
-	if (!mkfs(image, size, &opts)) {
+	if (opts.zero)
+		memset(image, 0, size);
+	if (!mkfs(image, size, &opts))
+	{
 		fprintf(stderr, "Failed to format the image\n");
 		goto end;
 	}
