@@ -42,7 +42,6 @@
 // trailing '/'. For example, "~/my_csc369_repo/a1b/mnt/dir/" will be passed to
 // FUSE callbacks as "/dir".
 
-
 /**
  * Initialize the file system.
  *
@@ -57,11 +56,13 @@
 static bool a1fs_init(fs_ctx *fs, a1fs_opts *opts)
 {
 	// Nothing to initialize if only printing help
-	if (opts->help) return true;
+	if (opts->help)
+		return true;
 
 	size_t size;
 	void *image = map_file(opts->img_path, A1FS_BLOCK_SIZE, &size);
-	if (!image) return false;
+	if (!image)
+		return false;
 
 	return fs_ctx_init(fs, image, size);
 }
@@ -74,8 +75,9 @@ static bool a1fs_init(fs_ctx *fs, a1fs_opts *opts)
  */
 static void a1fs_destroy(void *ctx)
 {
-	fs_ctx *fs = (fs_ctx*)ctx;
-	if (fs->image) {
+	fs_ctx *fs = (fs_ctx *)ctx;
+	if (fs->image)
+	{
 		munmap(fs->image, fs->size);
 		fs_ctx_destroy(fs);
 	}
@@ -84,9 +86,8 @@ static void a1fs_destroy(void *ctx)
 /** Get file system context. */
 static fs_ctx *get_fs(void)
 {
-	return (fs_ctx*)fuse_get_context()->private_data;
+	return (fs_ctx *)fuse_get_context()->private_data;
 }
-
 
 /**
  * Get file system statistics.
@@ -105,18 +106,31 @@ static fs_ctx *get_fs(void)
  */
 static int a1fs_statfs(const char *path, struct statvfs *st)
 {
-	(void)path;// unused
+	(void)path; // unused
 	fs_ctx *fs = get_fs();
 
 	memset(st, 0, sizeof(*st));
-	st->f_bsize   = A1FS_BLOCK_SIZE;
-	st->f_frsize  = A1FS_BLOCK_SIZE;
+	st->f_bsize = A1FS_BLOCK_SIZE;
+	st->f_frsize = A1FS_BLOCK_SIZE;
 	//TODO: fill in the rest of required fields based on the information stored
 	// in the superblock
 	(void)fs;
 	st->f_namemax = A1FS_NAME_MAX;
+	struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
+	fsblkcnt_t f_blocks = sb->blocks_count;
+	fsblkcnt_t f_bfree = sb->free_blocks_count;
+	fsblkcnt_t f_bavail = sb->free_blocks_count;
+	fsfilcnt_t f_files = sb->inodes_count;
+	fsfilcnt_t f_ffree = sb->free_inodes_count;
+	fsfilcnt_t f_favail = sb->free_inodes_count;
+	st->f_blocks = f_blocks;
+	st->f_bfree = f_bfree;
+	st->f_bavail = f_bavail;
+	st->f_files = f_files;
+	st->f_ffree = f_ffree;
+	st->f_favail = f_favail;
 
-	return -ENOSYS;
+	return 0;
 }
 
 /**
@@ -144,14 +158,16 @@ static int a1fs_statfs(const char *path, struct statvfs *st)
  */
 static int a1fs_getattr(const char *path, struct stat *st)
 {
-	if (strlen(path) >= A1FS_PATH_MAX) return -ENAMETOOLONG;
+	if (strlen(path) >= A1FS_PATH_MAX)
+		return -ENAMETOOLONG;
 	fs_ctx *fs = get_fs();
 
 	memset(st, 0, sizeof(*st));
 
 	//NOTE: This is just a placeholder that allows the file system to be mounted
 	// without errors. You should remove this from your implementation.
-	if (strcmp(path, "/") == 0) {
+	if (strcmp(path, "/") == 0)
+	{
 		//NOTE: all the fields set below are required and must be set according
 		// to the information stored in the corresponding inode
 		st->st_mode = S_IFDIR | 0777;
@@ -189,16 +205,17 @@ static int a1fs_getattr(const char *path, struct stat *st)
  * @return        0 on success; -errno on error.
  */
 static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                        off_t offset, struct fuse_file_info *fi)
+						off_t offset, struct fuse_file_info *fi)
 {
-	(void)offset;// unused
-	(void)fi;// unused
+	(void)offset; // unused
+	(void)fi;	  // unused
 	fs_ctx *fs = get_fs();
 
 	//NOTE: This is just a placeholder that allows the file system to be mounted
 	// without errors. You should remove this from your implementation.
-	if (strcmp(path, "/") == 0) {
-		filler(buf, "." , NULL, 0);
+	if (strcmp(path, "/") == 0)
+	{
+		filler(buf, ".", NULL, 0);
 		filler(buf, "..", NULL, 0);
 		return 0;
 	}
@@ -208,7 +225,6 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void)fs;
 	return -ENOSYS;
 }
-
 
 /**
  * Create a directory.
@@ -285,7 +301,7 @@ static int a1fs_rmdir(const char *path)
  */
 static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
-	(void)fi;// unused
+	(void)fi; // unused
 	assert(S_ISREG(mode));
 	fs_ctx *fs = get_fs();
 
@@ -318,7 +334,6 @@ static int a1fs_unlink(const char *path)
 	(void)fs;
 	return -ENOSYS;
 }
-
 
 /**
  * Change the modification time of a file or directory.
@@ -379,7 +394,6 @@ static int a1fs_truncate(const char *path, off_t size)
 	return -ENOSYS;
 }
 
-
 /**
  * Read data from a file.
  *
@@ -402,9 +416,9 @@ static int a1fs_truncate(const char *path, off_t size)
  *                -errno on error.
  */
 static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
-                     struct fuse_file_info *fi)
+					 struct fuse_file_info *fi)
 {
-	(void)fi;// unused
+	(void)fi; // unused
 	fs_ctx *fs = get_fs();
 
 	//TODO: read data from the file at given offset into the buffer
@@ -441,9 +455,9 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
  * @return        number of bytes written on success; -errno on error.
  */
 static int a1fs_write(const char *path, const char *buf, size_t size,
-                      off_t offset, struct fuse_file_info *fi)
+					  off_t offset, struct fuse_file_info *fi)
 {
-	(void)fi;// unused
+	(void)fi; // unused
 	fs_ctx *fs = get_fs();
 
 	//TODO: write data from the buffer into the file at given offset, possibly
@@ -456,30 +470,31 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 	return -ENOSYS;
 }
 
-
 static struct fuse_operations a1fs_ops = {
-	.destroy  = a1fs_destroy,
-	.statfs   = a1fs_statfs,
-	.getattr  = a1fs_getattr,
-	.readdir  = a1fs_readdir,
-	.mkdir    = a1fs_mkdir,
-	.rmdir    = a1fs_rmdir,
-	.create   = a1fs_create,
-	.unlink   = a1fs_unlink,
-	.utimens  = a1fs_utimens,
+	.destroy = a1fs_destroy,
+	.statfs = a1fs_statfs,
+	.getattr = a1fs_getattr,
+	.readdir = a1fs_readdir,
+	.mkdir = a1fs_mkdir,
+	.rmdir = a1fs_rmdir,
+	.create = a1fs_create,
+	.unlink = a1fs_unlink,
+	.utimens = a1fs_utimens,
 	.truncate = a1fs_truncate,
-	.read     = a1fs_read,
-	.write    = a1fs_write,
+	.read = a1fs_read,
+	.write = a1fs_write,
 };
 
 int main(int argc, char *argv[])
 {
-	a1fs_opts opts = {0};// defaults are all 0
+	a1fs_opts opts = {0}; // defaults are all 0
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-	if (!a1fs_opt_parse(&args, &opts)) return 1;
+	if (!a1fs_opt_parse(&args, &opts))
+		return 1;
 
 	fs_ctx fs = {0};
-	if (!a1fs_init(&fs, &opts)) {
+	if (!a1fs_init(&fs, &opts))
+	{
 		fprintf(stderr, "Failed to mount the file system\n");
 		return 1;
 	}
