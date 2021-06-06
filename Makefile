@@ -34,3 +34,14 @@ OBJ_FILES = $(SRC_FILES:.c=.o)
 
 clean:
 	rm -f $(OBJ_FILES) $(OBJ_FILES:.o=.d) a1fs mkfs.a1fs
+
+# test code
+test:
+	truncate -s 409600 image
+	./mkfs.a1fs -i 5 image
+	./a1fs image /tmp/userid
+	stat -f /tmp/userid
+
+cleantest:
+	fusermount -u /tmp/userid
+	rm image
