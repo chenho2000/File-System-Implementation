@@ -156,7 +156,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 
 	if (blocks_count < inode_bitmap_count + inode_table_count + block_bitmap_count + 2)
 		return false;
-	a1fs_superblock sb = {magic, size, first_blo_bitmap, first_blo_bitmap, first_ino, first_data_block, inode_bitmap_count, block_bitmap_count, inode_table_count, inodes_count, blocks_count, free_blocks_count, free_inodes_count};
+	a1fs_superblock sb = {magic, size, first_blo_bitmap, first_blo_bitmap, first_ino, first_data_block, inode_bitmap_count, block_bitmap_count, inode_table_count, inodes_count, blocks_count, free_blocks_count, free_inodes_count, inode_bitmap_pointer, block_bitmap_pointer, inode_pointer, data_block_pointer};
 	memcpy(image, &sb, sizeof(sb));
 	memset(image + A1FS_BLOCK_SIZE, 0, (inode_bitmap_count + block_bitmap_count) * A1FS_BLOCK_SIZE);
 	int total = inode_bitmap_count + block_bitmap_count + inode_table_count + 1;
