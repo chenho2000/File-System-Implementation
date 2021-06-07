@@ -11,10 +11,7 @@
 #include "fs_ctx.h"
 #include "options.h"
 #include "map.h"
-<<<<<<< HEAD
 #define check_bit(var, pos) ((var) & (1 << (pos)))
-=======
->>>>>>> bc71a0a5eee19a2a8de6c29aacaa439e59a1a4f4
 
 static inline int ceil_divide(int a, int b)
 {
@@ -26,7 +23,6 @@ static inline int ceil_divide(int a, int b)
     return ans;
 }
 
-<<<<<<< HEAD
 static inline int get_inode_by_inodenumber(fs_ctx *fs, unsigned int inode_num, struct a1fs_inode *inode)
 {
     if (check_bit((fs->inode_bitmap_pointer)[inode_num / 8] , inode_num % 8) == 1)
@@ -38,9 +34,6 @@ static inline int get_inode_by_inodenumber(fs_ctx *fs, unsigned int inode_num, s
 }
 
 static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, struct a1fs_inode *inode)
-=======
-static inline int get_inode_by_path(void *image, struct a1fs_superblock *sb, const char *path, struct a1fs_inode *inode)
->>>>>>> bc71a0a5eee19a2a8de6c29aacaa439e59a1a4f4
 {
     if (path[0] != '/')
     {
