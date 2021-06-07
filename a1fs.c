@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <math.h>
 
 // Using 2.9.x FUSE API
 #define FUSE_USE_VERSION 29
@@ -30,6 +31,7 @@
 #include "fs_ctx.h"
 #include "options.h"
 #include "map.h"
+#include "helper.h"
 
 //NOTE: All path arguments are absolute paths within the a1fs file system and
 // start with a '/' that corresponds to the a1fs root directory.
@@ -166,22 +168,32 @@ static int a1fs_getattr(const char *path, struct stat *st)
 
 	//NOTE: This is just a placeholder that allows the file system to be mounted
 	// without errors. You should remove this from your implementation.
-	if (strcmp(path, "/") == 0)
-	{
-		//NOTE: all the fields set below are required and must be set according
-		// to the information stored in the corresponding inode
-		st->st_mode = S_IFDIR | 0777;
-		st->st_nlink = 2;
-		st->st_size = 0;
-		st->st_blocks = 0 * A1FS_BLOCK_SIZE / 512;
-		st->st_mtim = (struct timespec){0};
-		return 0;
-	}
+	// if (strcmp(path, "/") == 0)
+	// {
+	// 	//NOTE: all the fields set below are required and must be set according
+	// 	// to the information stored in the corresponding inode
+	// 	st->st_mode = S_IFDIR | 0777;
+	// 	st->st_nlink = 2;
+	// 	st->st_size = 0;
+	// 	st->st_blocks = 0 * A1FS_BLOCK_SIZE / 512;
+	// 	st->st_mtim = (struct timespec){0};
+	// 	return 0;
+	// }
 
 	//TODO: lookup the inode for given path and, if it exists, fill in the
 	// required fields based on the information stored in the inode
-	(void)fs;
-	return -ENOSYS;
+	struct a1fs_inode inode;
+	int get_inode = get_inode_by_path(fs->image, fs, path, &inode);
+	if (get_inode != 0)
+	{
+		return get_inode;
+	}
+	st->st_mode = inode.mode;
+	st->st_nlink = inode.links;
+	st->st_size = inode.size;
+	st->st_blocks = ceil_divide(inode.size, 512);
+	st->st_mtim = (struct timespec)inode.mtime;
+	return 0;
 }
 
 /**
@@ -213,17 +225,41 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	//NOTE: This is just a placeholder that allows the file system to be mounted
 	// without errors. You should remove this from your implementation.
-	if (strcmp(path, "/") == 0)
-	{
-		filler(buf, ".", NULL, 0);
-		filler(buf, "..", NULL, 0);
-		return 0;
-	}
+	// if (strcmp(path, "/") == 0)
+	// {
+	// 	filler(buf, ".", NULL, 0);
+	// 	filler(buf, "..", NULL, 0);
+	// 	return 0;
+	// }
 
 	//TODO: lookup the directory inode for given path and iterate through its
 	// directory entries
-	(void)fs;
-	return -ENOSYS;
+	if (filler(buf, ".", NULL, 0) != 0)
+		return -ENOMEM;
+	if (filler(buf, "..", NULL, 0) != 0)
+		return -ENOMEM;
+	struct a1fs_inode curr_inode;
+	void *image = fs->image;
+	int get_inode = get_inode_by_path(fs->image, fs, path, &curr_inode);
+	if (get_inode != 0)
+	{
+		return -errno;
+	}
+
+	for (unsigned int i = 0; i < curr_inode.num_extents; i++)
+	{
+		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(image + curr_inode.extent_table * A1FS_BLOCK_SIZE + i * sizeof(struct a1fs_extent));
+		for (int j = 0; j < curr_inode.entry_count; j++)
+		{
+			struct a1fs_dentry *entry = (struct a1fs_dentry *)(image + curr_extent->start * A1FS_BLOCK_SIZE + j * sizeof(struct a1fs_dentry));
+			if (filler(buf, entry->name, NULL, 0) != 0)
+			{
+				return -ENOMEM;
+			}
+		}
+	}
+
+	return 0;
 }
 
 /**

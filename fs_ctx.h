@@ -21,6 +21,10 @@
 #include <stddef.h>
 
 #include "options.h"
+#include "a1fs.h"
+#include "fs_ctx.h"
+#include "options.h"
+#include "map.h"
 
 
 /**
@@ -34,6 +38,12 @@ typedef struct fs_ctx {
 
 	//TODO: useful runtime state of the mounted file system should be cached
 	// here (NOT in global variables in a1fs.c)
+	struct a1fs_superblock* super_block_pointer; 	/* pointer to super block */
+	unsigned char* inode_bitmap_pointer; 	/* pointer to inode bitmap */
+	unsigned char* block_bitmap_pointer;	/* pointer to block bitmap */
+	unsigned char* inode_pointer;	/* pointer to inode table */
+	unsigned char* data_block_pointer;	/* pointer to data block */
+
 
 } fs_ctx;
 

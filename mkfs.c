@@ -23,6 +23,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <time.h>
+#include "helper.h"
 
 #include "a1fs.h"
 #include "map.h"
@@ -117,16 +118,6 @@ static bool a1fs_is_present(void *image)
 	return true;
 }
 
-int ceil_divide(int a, int b)
-{
-	int ans = a / b;
-	if (a % b > 0)
-	{
-		ans++;
-	}
-	return ans;
-}
-
 /**
  * Format the image into a1fs.
  *
@@ -151,7 +142,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	size = (uint64_t)size;
 	unsigned int blocks_count = size / A1FS_BLOCK_SIZE;
 	unsigned int inode_bitmap_count = ceil_divide(opts->n_inodes, A1FS_BLOCK_SIZE * 8);
-	unsigned int block_bitmap_count = ceil_divide(blocks_count, A1FS_BLOCK_SIZE * 8));
+	unsigned int block_bitmap_count = ceil_divide(blocks_count, A1FS_BLOCK_SIZE * 8);
 	unsigned int inodes_count = opts->n_inodes;
 	unsigned int inode_table_count = ceil_divide((sizeof(struct a1fs_inode) * inodes_count), A1FS_BLOCK_SIZE);
 
@@ -162,6 +153,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 
 	unsigned int free_blocks_count = blocks_count - inode_bitmap_count - block_bitmap_count - inode_table_count - 2;
 	unsigned int free_inodes_count = opts->n_inodes - 1;
+
 	if (blocks_count < inode_bitmap_count + inode_table_count + block_bitmap_count + 2)
 		return false;
 	a1fs_superblock sb = {magic, size, first_blo_bitmap, first_blo_bitmap, first_ino, first_data_block, inode_bitmap_count, block_bitmap_count, inode_table_count, inodes_count, blocks_count, free_blocks_count, free_inodes_count};

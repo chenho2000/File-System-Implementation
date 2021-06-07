@@ -36,12 +36,17 @@ clean:
 	rm -f $(OBJ_FILES) $(OBJ_FILES:.o=.d) a1fs mkfs.a1fs
 
 # test code
+setup:
+	truncate -s 409600 image
+	./mkfs.a1fs -i 5 image
+
 test:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 5 image
 	./a1fs image /tmp/userid
 	stat -f /tmp/userid
+	ls -la /tmp/userid
 
-cleantest:
+c:
 	fusermount -u /tmp/userid
 	rm image
