@@ -23,6 +23,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <time.h>
+#include "helper.h"
 
 #include "a1fs.h"
 #include "map.h"
@@ -117,16 +118,6 @@ static bool a1fs_is_present(void *image)
 	return true;
 }
 
-int ceil_divide(int a, int b)
-{
-	int ans = a / b;
-	if (a % b > 0)
-	{
-		ans++;
-	}
-	return ans;
-}
-
 /**
  * Format the image into a1fs.
  *
@@ -162,9 +153,14 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 
 	unsigned int free_blocks_count = blocks_count - inode_bitmap_count - block_bitmap_count - inode_table_count - 2;
 	unsigned int free_inodes_count = opts->n_inodes - 1;
+	unsigned char *inode_bitmap_pointer = (unsigned char *)(image + first_ino_bitmap * A1FS_BLOCK_SIZE);
+	unsigned char *block_bitmap_pointer = (unsigned char *)(image + first_blo_bitmap * A1FS_BLOCK_SIZE);
+	unsigned char *inode_pointer = (unsigned char *)(image + first_ino * A1FS_BLOCK_SIZE);
+	unsigned char *data_block_pointer = (unsigned char *)(image + first_data_block * A1FS_BLOCK_SIZE);
+
 	if (blocks_count < inode_bitmap_count + inode_table_count + block_bitmap_count + 2)
 		return false;
-	a1fs_superblock sb = {magic, size, first_blo_bitmap, first_blo_bitmap, first_ino, first_data_block, inode_bitmap_count, block_bitmap_count, inode_table_count, inodes_count, blocks_count, free_blocks_count, free_inodes_count};
+	a1fs_superblock sb = {magic, size, first_blo_bitmap, first_blo_bitmap, first_ino, first_data_block, inode_bitmap_count, block_bitmap_count, inode_table_count, inodes_count, blocks_count, free_blocks_count, free_inodes_count, inode_bitmap_pointer, block_bitmap_pointer, inode_pointer, data_block_pointer};
 	memcpy(image, &sb, sizeof(sb));
 	memset(image + A1FS_BLOCK_SIZE, 0, (inode_bitmap_count + block_bitmap_count) * A1FS_BLOCK_SIZE);
 	int total = inode_bitmap_count + block_bitmap_count + inode_table_count + 1;
