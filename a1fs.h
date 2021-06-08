@@ -65,11 +65,6 @@ typedef struct a1fs_superblock {
 	unsigned int free_blocks_count; /* Free blocks count */
 	unsigned int free_inodes_count; /* Free inodes count */
 
-	unsigned char* inode_bitmap_pointer; 	/* pointer to inode bitmap */
-	unsigned char* block_bitmap_pointer;	/* pointer to block bitmap */
-	unsigned char* inode_pointer;	/* pointer to inode table */
-	unsigned char* data_block_pointer;	/* pointer to data block */
-
 } a1fs_superblock;
 
 // Superblock must fit into a single block
