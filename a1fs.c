@@ -487,25 +487,27 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	{
 		return 0;
 	}
-	if ((inode.size - offset) >= size)
+	char ans[size];
+	memset(ans, 0, size);
+	int curr = size;
+	for (int i = 0; i < (int)(inode.num_extents); i++)
 	{
-		char ans[inode.size];
-		read_and_store(fs->image, ans, inode);
-		memcpy(buf, ans + offset, size);
-	}
-	else
-	{
-		int total_size = 0;
-		for (int i = 0; i < (int)(inode.num_extents); i++)
+		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
+		int total_size = (curr_extent->count) * A1FS_BLOCK_SIZE;
+		unsigned char *data_pointer = image + (curr_extent->start) * A1FS_BLOCK_SIZE;
+		if (curr > total_size)
 		{
-			struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
-			total_size += ((curr_extent->count) * A1FS_BLOCK_SIZE);
+			memcpy(ans, data_pointer, total_size);
 		}
-		char ans[total_size];
-		read_and_store(fs->image, ans, inode);
-		memset(buf, 0, size);
-		memcpy(buf, ans + offset, inode.size - offset);
+		else
+		{
+			memcpy(ans, data_pointer, curr);
+			break;
+		}
+		ans += total_size;
+		curr -= total_size;
 	}
+	memcpy(buf, ans + offset, size);
 
 	return 0;
 }
