@@ -395,9 +395,6 @@ static int a1fs_utimens(const char *path, const struct timespec times[2])
 	//TODO: update the modification timestamp (mtime) in the inode for given
 	// path with either the time passed as argument or the current time,
 	// according to the utimensat man page
-	(void)path;
-	(void)times;
-	(void)fs;
 	struct a1fs_inode inode;
 	int get_inode = get_inode_by_path(fs->image, fs, path, &inode);
 	if (get_inode != 0)
@@ -479,12 +476,38 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	fs_ctx *fs = get_fs();
 
 	//TODO: read data from the file at given offset into the buffer
-	(void)path;
-	(void)buf;
-	(void)size;
-	(void)offset;
-	(void)fs;
-	return -ENOSYS;
+	a1fs_superblock *sb = (a1fs_superblock *)fs->image;
+	struct a1fs_inode inode;
+	int get_inode = get_inode_by_path(fs->image, fs, path, &inode);
+	if (get_inode != 0)
+	{
+		return -errno;
+	}
+	else if (offset >= (int)sb->size || offset >= (int)inode.size)
+	{
+		return 0;
+	}
+	if ((inode.size - offset) >= size)
+	{
+		char ans[inode.size];
+		read_and_store(fs->image, ans, inode);
+		memcpy(buf, ans + offset, size);
+	}
+	else
+	{
+		int total_size = 0;
+		for (int i = 0; i < (int)(inode.num_extents); i++)
+		{
+			struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
+			total_size += ((curr_extent->count) * A1FS_BLOCK_SIZE);
+		}
+		char ans[total_size];
+		read_and_store(fs->image, ans, inode);
+		memset(buf, 0, size);
+		memcpy(buf, ans + offset, inode.size - offset);
+	}
+
+	return 0;
 }
 
 /**

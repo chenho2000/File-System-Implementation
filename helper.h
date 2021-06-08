@@ -25,7 +25,7 @@ static inline int ceil_divide(int a, int b)
 
 static inline int get_inode_by_inodenumber(fs_ctx *fs, unsigned int inode_num, struct a1fs_inode *inode)
 {
-    if (check_bit((fs->inode_bitmap_pointer)[inode_num / 8] , inode_num % 8) == 1)
+    if (check_bit((fs->inode_bitmap_pointer)[inode_num / 8], inode_num % 8) == 1)
     {
         *inode = *(struct a1fs_inode *)((fs->inode_pointer) + sizeof(struct a1fs_inode) * inode_num);
         return 0;
@@ -106,4 +106,16 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
         }
     }
     return 0;
+}
+
+static inline void read_and_store(void *image, char *ans, struct a1fs_inode inode)
+{
+    for (int i = 0; i < (int)(inode.num_extents); i++)
+    {
+        struct a1fs_extent *curr_extent = (struct a1fs_extent *)(image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
+        int total_size = (curr_extent->count) * A1FS_BLOCK_SIZE;
+        unsigned char* data_pointer = image + (curr_extent->start) * A1FS_BLOCK_SIZE;
+        memcpy(ans, data_pointer, total_size);
+        ans += total_size;
+    }
 }
