@@ -398,7 +398,28 @@ static int a1fs_utimens(const char *path, const struct timespec times[2])
 	(void)path;
 	(void)times;
 	(void)fs;
-	return -ENOSYS;
+	struct a1fs_inode inode;
+	int get_inode = get_inode_by_path(fs->image, fs, path, &inode);
+	if (get_inode != 0)
+	{
+		return -errno;
+	}
+	if (times)
+	{
+		inode.mtime.tv_sec = times[1].tv_sec;
+		inode.mtime.tv_nsec = times[1].tv_nsec;
+		unsigned int ino = inode.inode;
+		unsigned char *inode_pointer = fs->inode_pointer;
+		memcpy(sizeof(struct a1fs_inode) * ino + inode_pointer, &inode, sizeof(a1fs_inode));
+	}
+	else
+	{
+		clock_gettime(CLOCK_REALTIME, &(inode.mtime));
+		unsigned int ino = inode.inode;
+		unsigned char *inode_pointer = fs->inode_pointer;
+		memcpy(sizeof(struct a1fs_inode) * ino + inode_pointer, &inode, sizeof(a1fs_inode));
+	}
+	return 0;
 }
 
 /**
