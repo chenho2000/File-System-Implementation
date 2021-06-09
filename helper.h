@@ -107,3 +107,38 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
     }
     return 0;
 }
+
+/** return free inode number, return -1 if not available */
+static inline int get_free_ino(fs_ctx* fs){
+    struct a1fs_superblock* sb = (struct a1fs_superblock*)fs->image;
+    int inodes_count = sb->inodes_count;
+    for (int i = 0; i < inodes_count; i++){
+        if (check_bit((fs->inode_bitmap_pointer)[i / 8] , i % 8) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+/** return free block number, return -1 if not available */
+static inline int get_free_blk(fs_ctx* fs){
+  struct a1fs_superblock* sb = (struct a1fs_superblock*)fs->image;
+    int blocks_count = sb->blocks_count;
+    for (int i = 0; i < blocks_count; i++){
+        if (check_bit((fs->block_bitmap_pointer)[i / 8] , i % 8) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+/** Update bitmap by given index and value 1 or 0 */
+static inline void update_bitmap_by_index(unsigned char* bitmap_pointer, int index, int value){
+	if (value == 1){
+        bitmap_pointer[index / 8] |= 1 << index % 8;	
+    }
+    else{
+        bitmap_pointer[index / 8] &= ~(1 << index % 8);	
+    }
+}
+
