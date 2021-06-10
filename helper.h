@@ -166,5 +166,9 @@ static inline char* get_path(char *path){
     strncpy(parent_path, path, strlen(path) + 1);
 	char *p1 = strrchr(parent_path, '/');
 	if(p1 != NULL) *p1 = '\0';
+    if (strlen(parent_path) == 0){
+        parent_path[0] = '/';
+        parent_path[1] = '\0';
+	}
     return parent_path;
 }
