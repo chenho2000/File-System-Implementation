@@ -361,7 +361,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	parent_inode.size += sizeof(struct a1fs_dentry);
 	clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
 	parent_inode.entry_count++;
-	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode , parent_inode, sizeof(a1fs_inode));
+	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode , &parent_inode, sizeof(a1fs_inode));
 	
 	return 0;
 }
