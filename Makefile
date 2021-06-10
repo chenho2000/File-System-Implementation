@@ -46,6 +46,7 @@ test:
 	./a1fs image /tmp/userid
 	stat -f /tmp/userid
 	ls -la /tmp/userid
+	mkdir /tmp/userid/csc369
 
 c:
 	fusermount -u /tmp/userid
