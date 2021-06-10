@@ -321,9 +321,9 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	int found_dentry = 0;
 	struct a1fs_inode *parent_inode;
 	get_inode_by_path(fs->image, fs, parent_path, parent_inode);
-	for (int i = 0; i < parent_inode.num_extents; i++){
+	for (int i = 0; i < parent_inode->num_extents; i++){
 		struct a1fs_extent* extent = (struct a1fs_extent*)(fs->image + parent_inode->extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
-		for (int j = 0; j < extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry); j++){
+		for (unsigned int j = 0; j < extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry); j++){
 			struct a1fs_dentry* new_dentry = (struct a1fs_dentry*)(fs->image + extent->start*A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry) * j);
 			if(new_dentry->ino == 0 && strlen(new_dentry->name) == 0){
 				new_dentry->ino = new_ino;
@@ -341,7 +341,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 		if (new_dentry_blk == -1){
 			return -ENOSPC;
 		}
-		update_bitmap_by_index(block_bitmap, new_dentry_blk, 1)
+		update_bitmap_by_index(block_bitmap, new_dentry_blk, 1);
 		sb->free_blocks_count--;
 
 		struct a1fs_extent* new_extent = (struct a1fs_extent*)(fs->image + parent_inode->extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * parent_inode->num_extents);
@@ -350,7 +350,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 		parent_inode->num_extents++;
 
 		struct a1fs_dentry* new_entry = (struct a1fs_dentry*)(fs->image + new_dentry_blk * A1FS_BLOCK_SIZE);
-		new_entry->ino = new_inode;
+		new_entry->ino = new_ino;
 		strncpy(new_entry->name, dir_name, strlen(dir_name)+1);
 
 		found_dentry = 1;
