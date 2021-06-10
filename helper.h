@@ -142,3 +142,29 @@ static inline void update_bitmap_by_index(unsigned char* bitmap_pointer, int ind
     }
 }
 
+/** 
+ * Extract directory/file name from given path 
+ * return directory/file name
+ */
+static inline char* get_name(char *path){
+    static char temp_path[A1FS_PATH_MAX]; 
+	strncpy(temp_path, path, strlen(path) + 1);
+	char *file_name = strrchr(temp_path, '/');
+    if (file_name == NULL)
+        file_name = temp_path;
+    else
+        file_name++;
+    return file_name;
+}
+
+/** R
+ * emove directory/file name from given path 
+ * return modifeid path 
+ */
+static inline char* get_path(char *path){
+    static char parent_path[A1FS_PATH_MAX];
+    strncpy(parent_path, path, strlen(path) + 1);
+	char *p1 = strrchr(parent_path, '/');
+	if(p1 != NULL) *p1 = '\0';
+    return parent_path;
+}
