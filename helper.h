@@ -110,8 +110,7 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
                     if (p == NULL)
                     {
                         if (get_inode_by_inodenumber(fs, curr_entry->ino, inode) != 0)
-                        {   print_bitmap(fs->inode_bitmap_pointer, 16);
-                            fprintf(stderr, "Inode %d\n",curr_entry->ino);
+                        {
                             return -ENOTDIR;
                         }
                     }
