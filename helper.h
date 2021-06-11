@@ -56,7 +56,7 @@ static inline int ceil_divide(int a, int b)
 
 static inline int get_inode_by_inodenumber(fs_ctx *fs, unsigned int inode_num, struct a1fs_inode *inode)
 {
-    if (check_bit((fs->inode_bitmap_pointer)[inode_num / 8], inode_num % 8) == 1)
+    if (check_bit((fs->inode_bitmap_pointer)[inode_num / 8], inode_num % 8) > 0)
     {
         *inode = *(struct a1fs_inode *)((fs->inode_pointer) + sizeof(struct a1fs_inode) * inode_num);
         return 0;
@@ -110,7 +110,8 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
                     if (p == NULL)
                     {
                         if (get_inode_by_inodenumber(fs, curr_entry->ino, inode) != 0)
-                        {
+                        {   print_bitmap(fs->inode_bitmap_pointer, 16);
+                            fprintf(stderr, "Inode %d\n",curr_entry->ino);
                             return -ENOTDIR;
                         }
                     }
