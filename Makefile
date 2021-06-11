@@ -53,6 +53,8 @@ test:
 	ls -la /tmp/userid
 	touch /tmp/userid/test
 
+touch:
+	touch /tmp/userid/test
 testdir:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 5 image

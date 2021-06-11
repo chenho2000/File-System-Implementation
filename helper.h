@@ -155,47 +155,18 @@ static inline void update_bitmap_by_index(unsigned char *bitmap_pointer, int ind
  * Extract directory/file name from given path 
  * return directory/file name
  */
-// static inline char *get_name(const char *path)
-// {
-//     static char temp_path[A1FS_PATH_MAX];
-//     strncpy(temp_path, path, strlen(path) + 1);
-//     char *file_name = strrchr(temp_path, '/');
-//     if (file_name == NULL)
-//         file_name = temp_path;
-//     else
-//         file_name++;
-//     return file_name;
-// }
-
 static inline char *get_name(const char *path)
 {
-    if (path[0] != '/')
-    {
-        fprintf(stderr, "Not an absolute path\n");
-        return NULL;
-    }
-    char copy[A1FS_PATH_MAX];
-    strncpy(copy, path, strlen(path) + 1);
-    char *pre_p = NULL;
-    char *p = strtok(copy, "/");
-    char *next_p = strtok(NULL, "/");
-    if (p == NULL)
-    {
-        return "/";
-    }
-    while (true)
-    {
-        pre_p = p;
-        p = next_p;
-        next_p = strtok(NULL, "/");
-        if (next_p == NULL)
-        {
-            return pre_p;
-        }
-    }
-
-    return pre_p;
+    static char temp_path[A1FS_PATH_MAX];
+    strncpy(temp_path, path, strlen(path) + 1);
+    char *file_name = strrchr(temp_path, '/');
+    if (file_name == NULL)
+        file_name = temp_path;
+    else
+        file_name++;
+    return file_name;
 }
+
 
 /** R
  * emove directory/file name from given path 
