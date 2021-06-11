@@ -427,70 +427,70 @@ static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	fs_ctx *fs = get_fs();
 
 	//TODO: create a file at given path with given mode
-	// (void)path;
-	// (void)mode;
-	// (void)fs;
-	// return -ENOSYS;
-	struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
-	if (sb->free_inodes_count == 0 || sb->free_blocks_count == 1)
-	{
-		return -ENOSPC;
-	}
-	unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
-	unsigned char *block_bitmap = fs->block_bitmap_pointer;
-	unsigned char *inode_table = fs->inode_pointer;
+	(void)path;
+	(void)mode;
+	(void)fs;
+	return -ENOSYS;
+	// struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
+	// if (sb->free_inodes_count == 0 || sb->free_blocks_count == 1)
+	// {
+	// 	return -ENOSPC;
+	// }
+	// unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
+	// unsigned char *block_bitmap = fs->block_bitmap_pointer;
+	// unsigned char *inode_table = fs->inode_pointer;
 
-	int new_blk = get_free_blk(fs);
-	int new_ino = get_free_ino(fs);
-	print_bitmap(fs->inode_bitmap_pointer, sb->inodes_count);
-	print_bitmap(fs->block_bitmap_pointer, sb->blocks_count);
-	if (new_blk == -1 || new_ino == -1)
-	{
-		return -ENOSPC;
-	}
-	update_bitmap_by_index(block_bitmap, new_blk, 1);
-	sb->free_blocks_count--;
-	update_bitmap_by_index(inode_bitmap, new_ino, 1);
-	sb->free_inodes_count--;
+	// int new_blk = get_free_blk(fs);
+	// int new_ino = get_free_ino(fs);
+	// print_bitmap(fs->inode_bitmap_pointer, sb->inodes_count);
+	// print_bitmap(fs->block_bitmap_pointer, sb->blocks_count);
+	// if (new_blk == -1 || new_ino == -1)
+	// {
+	// 	return -ENOSPC;
+	// }
+	// update_bitmap_by_index(block_bitmap, new_blk, 1);
+	// sb->free_blocks_count--;
+	// update_bitmap_by_index(inode_bitmap, new_ino, 1);
+	// sb->free_inodes_count--;
 
-	struct a1fs_inode *new_inode = (struct a1fs_inode *)(inode_table + sizeof(struct a1fs_inode) * (new_ino));
-	new_inode->mode = mode;
-	new_inode->links = 1;
-	new_inode->size = 0;
-	clock_gettime(CLOCK_REALTIME, &(new_inode->mtime));
-	new_inode->inode = new_ino;
-	new_inode->num_extents = 0;
-	new_inode->extent_table = new_blk;
-	// extract parant path
-	char *parent_path = get_path(path);
-	// extract directory name
-	char *file_name = get_name(path);
-	struct a1fs_inode parent_inode;
-	get_inode_by_path(fs->image, fs, parent_path, &parent_inode);
-	if (parent_inode.num_extents >= 512)
-	{
-		return -ENOSPC;
-	}
-	for (long unsigned int i = 0; i < parent_inode.num_extents; i++)
-	{
-		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + parent_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
-		for (long unsigned int j = 0; j < (curr_extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry)); j++)
-		{
-			struct a1fs_dentry *curr_dentry = (struct a1fs_dentry *)(fs->image + curr_extent->start * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry) * j);
-			if (curr_dentry->ino == 0)
-			{
-				curr_dentry->ino = new_ino;
-				parent_inode.size += sizeof(struct a1fs_dentry);
-				parent_inode.entry_count++;
-				clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
-				strncpy(curr_dentry->name, file_name, strlen(file_name) + 1);
-				memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
-				return 0;
-			}
-		}
-	}
+	// struct a1fs_inode *new_inode = (struct a1fs_inode *)(inode_table + sizeof(struct a1fs_inode) * (new_ino));
+	// new_inode->mode = mode;
+	// new_inode->links = 1;
+	// new_inode->size = 0;
+	// clock_gettime(CLOCK_REALTIME, &(new_inode->mtime));
+	// new_inode->inode = new_ino;
+	// new_inode->num_extents = 0;
+	// new_inode->extent_table = new_blk;
+	// // extract parant path
+	// char *parent_path = get_path(path);
+	// // extract directory name
+	// char *file_name = get_name(path);
+	// struct a1fs_inode parent_inode;
+	// get_inode_by_path(fs->image, fs, parent_path, &parent_inode);
+	// if (parent_inode.num_extents >= 512)
+	// {
+	// 	return -ENOSPC;
+	// }
+	// for (long unsigned int i = 0; i < parent_inode.num_extents; i++)
+	// {
+	// 	struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + parent_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
+	// 	for (long unsigned int j = 0; j < (curr_extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry)); j++)
+	// 	{
+	// 		struct a1fs_dentry *curr_dentry = (struct a1fs_dentry *)(fs->image + curr_extent->start * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry) * j);
+	// 		if (curr_dentry->ino == 0)
+	// 		{
+	// 			curr_dentry->ino = new_ino;
+	// 			parent_inode.size += sizeof(struct a1fs_dentry);
+	// 			parent_inode.entry_count++;
+	// 			clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
+	// 			strncpy(curr_dentry->name, file_name, strlen(file_name) + 1);
+	// 			memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
+	// 			return 0;
+	// 		}
+	// 	}
+	// }
 
-	return -ENOSPC;
+	// return -ENOSPC;
 }
 
 /**
