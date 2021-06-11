@@ -109,11 +109,14 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
 }
 
 /** return free inode number, return -1 if not available */
-static inline int get_free_ino(fs_ctx* fs){
-    struct a1fs_superblock* sb = (struct a1fs_superblock*)fs->image;
+static inline int get_free_ino(fs_ctx *fs)
+{
+    struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
     int inodes_count = sb->inodes_count;
-    for (int i = 0; i < inodes_count; i++){
-        if (check_bit((fs->inode_bitmap_pointer)[i / 8] , i % 8) == 0){
+    for (int i = 0; i < inodes_count; i++)
+    {
+        if (check_bit((fs->inode_bitmap_pointer)[i / 8], i % 8) == 0)
+        {
             return i;
         }
     }
@@ -121,11 +124,14 @@ static inline int get_free_ino(fs_ctx* fs){
 }
 
 /** return free block number, return -1 if not available */
-static inline int get_free_blk(fs_ctx* fs){
-  struct a1fs_superblock* sb = (struct a1fs_superblock*)fs->image;
+static inline int get_free_blk(fs_ctx *fs)
+{
+    struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
     int blocks_count = sb->blocks_count;
-    for (int i = 0; i < blocks_count; i++){
-        if (check_bit((fs->block_bitmap_pointer)[i / 8] , i % 8) == 0){
+    for (int i = 0; i < blocks_count; i++)
+    {
+        if (check_bit((fs->block_bitmap_pointer)[i / 8], i % 8) == 0)
+        {
             return i;
         }
     }
@@ -133,12 +139,15 @@ static inline int get_free_blk(fs_ctx* fs){
 }
 
 /** Update bitmap by given index and value 1 or 0 */
-static inline void update_bitmap_by_index(unsigned char* bitmap_pointer, int index, int value){
-	if (value == 1){
-        bitmap_pointer[index / 8] |= 1 << index % 8;	
+static inline void update_bitmap_by_index(unsigned char *bitmap_pointer, int index, int value)
+{
+    if (value == 1)
+    {
+        bitmap_pointer[index / 8] |= 1 << index % 8;
     }
-    else{
-        bitmap_pointer[index / 8] &= ~(1 << index % 8);	
+    else
+    {
+        bitmap_pointer[index / 8] &= ~(1 << index % 8);
     }
 }
 
@@ -146,29 +155,63 @@ static inline void update_bitmap_by_index(unsigned char* bitmap_pointer, int ind
  * Extract directory/file name from given path 
  * return directory/file name
  */
-static inline char* get_name(const char *path){
-    static char temp_path[A1FS_PATH_MAX]; 
-	strncpy(temp_path, path, strlen(path) + 1);
-	char *file_name = strrchr(temp_path, '/');
-    if (file_name == NULL)
-        file_name = temp_path;
-    else
-        file_name++;
-    return file_name;
+// static inline char *get_name(const char *path)
+// {
+//     static char temp_path[A1FS_PATH_MAX];
+//     strncpy(temp_path, path, strlen(path) + 1);
+//     char *file_name = strrchr(temp_path, '/');
+//     if (file_name == NULL)
+//         file_name = temp_path;
+//     else
+//         file_name++;
+//     return file_name;
+// }
+
+static inline char *get_name(const char *path)
+{
+    if (path[0] != '/')
+    {
+        fprintf(stderr, "Not an absolute path\n");
+        return NULL;
+    }
+    char copy[A1FS_PATH_MAX];
+    strncpy(copy, path, strlen(path) + 1);
+    char *pre_p = NULL;
+    char *p = strtok(copy, "/");
+    char *next_p = strtok(NULL, "/");
+    if (p == NULL)
+    {
+        return "/";
+    }
+    while (true)
+    {
+        pre_p = p;
+        p = next_p;
+        next_p = strtok(NULL, "/");
+        if (next_p == NULL)
+        {
+            return pre_p;
+        }
+    }
+
+    return pre_p;
 }
 
 /** R
  * emove directory/file name from given path 
  * return modifeid path 
  */
-static inline char* get_path(const char *path){
+static inline char *get_path(const char *path)
+{
     static char parent_path[A1FS_PATH_MAX];
     strncpy(parent_path, path, strlen(path) + 1);
-	char *p1 = strrchr(parent_path, '/');
-	if(p1 != NULL) *p1 = '\0';
-    if (strlen(parent_path) == 0){
+    char *p1 = strrchr(parent_path, '/');
+    if (p1 != NULL)
+        *p1 = '\0';
+    if (strlen(parent_path) == 0)
+    {
         parent_path[0] = '/';
         parent_path[1] = '\0';
-	}
+    }
     return parent_path;
 }

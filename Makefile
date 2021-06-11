@@ -40,7 +40,20 @@ setup:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 5 image
 
+debug:
+	truncate -s 409600 image
+	./mkfs.a1fs -i 5 image
+	gdb --args ./a1fs image /tmp/userid
+
 test:
+	truncate -s 409600 image
+	./mkfs.a1fs -i 5 image
+	./a1fs image /tmp/userid
+	stat -f /tmp/userid
+	ls -la /tmp/userid
+	touch /tmp/userid/test
+
+testdir:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 5 image
 	./a1fs image /tmp/userid
@@ -49,5 +62,5 @@ test:
 	mkdir /tmp/userid/csc369
 
 c:
-	fusermount -u /tmp/userid
 	rm image
+	fusermount -u /tmp/userid
