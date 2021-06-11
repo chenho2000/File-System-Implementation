@@ -43,11 +43,11 @@ setup:
 debug:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 5 image
-	gdb --args ./a1fs image /tmp/userid
+	gdb --args ./a1fs image /tmp/userid -d
 
 test:
 	truncate -s 409600 image
-	./mkfs.a1fs -i 5 image
+	./mkfs.a1fs -i 10 image
 	./a1fs image /tmp/userid
 	stat -f /tmp/userid
 	ls -la /tmp/userid

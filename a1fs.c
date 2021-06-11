@@ -442,6 +442,8 @@ static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 
 	// int new_blk = get_free_blk(fs);
 	// int new_ino = get_free_ino(fs);
+	// print_bitmap(fs->inode_bitmap_pointer, sb->inodes_count);
+	// print_bitmap(fs->block_bitmap_pointer, sb->blocks_count);
 	// if (new_blk == -1 || new_ino == -1)
 	// {
 	// 	return -ENOSPC;
@@ -469,10 +471,10 @@ static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	// {
 	// 	return -ENOSPC;
 	// }
-	// for (long unsigned int i = 0; i < parent_inode.num_extents + 1; i++)
+	// for (long unsigned int i = 0; i < parent_inode.num_extents; i++)
 	// {
 	// 	struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + parent_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
-	// 	for (long unsigned int j = 0; j < (curr_extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry)) + 1; j++)
+	// 	for (long unsigned int j = 0; j < (curr_extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry)); j++)
 	// 	{
 	// 		struct a1fs_dentry *curr_dentry = (struct a1fs_dentry *)(fs->image + curr_extent->start * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry) * j);
 	// 		if (curr_dentry->ino == 0)
@@ -482,13 +484,13 @@ static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	// 			parent_inode.entry_count++;
 	// 			clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
 	// 			strncpy(curr_dentry->name, file_name, strlen(file_name) + 1);
-	// 			memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode , &parent_inode, sizeof(a1fs_inode));
+	// 			memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
 	// 			return 0;
 	// 		}
 	// 	}
 	// }
 
-	// return -ENOSPC ;
+	// return -ENOSPC;
 }
 
 /**

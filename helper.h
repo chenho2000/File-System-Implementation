@@ -13,6 +13,37 @@
 #include "map.h"
 #define check_bit(var, pos) ((var) & (1 << (pos)))
 
+// delete
+static inline void print_bitmap(unsigned char *b, int end)
+{
+    int num_of_byte;
+    int in_use_bit;
+    int bit, byte;
+    num_of_byte = end / 8;
+    fprintf(stderr, "\n---------------------------------------\n");
+    for (byte = 0; byte < num_of_byte; byte++)
+    {
+        for (bit = 0; bit < 8; bit++)
+        {
+            in_use_bit = b[byte] & (1 << bit);
+            if (in_use_bit >= 1)
+            {
+                fprintf(stderr, "1");
+            }
+            else
+            {
+                fprintf(stderr, "0");
+            }
+        }
+
+        if (byte != (num_of_byte - 1))
+        {
+            fprintf(stderr, " ");
+        }
+    }
+    fprintf(stderr, "\n---------------------------------------\n");
+}
+
 static inline int ceil_divide(int a, int b)
 {
     int ans = a / b;
@@ -166,7 +197,6 @@ static inline char *get_name(const char *path)
         file_name++;
     return file_name;
 }
-
 
 /** R
  * emove directory/file name from given path 
