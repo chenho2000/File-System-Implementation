@@ -299,7 +299,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 
 	unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
 	unsigned char *block_bitmap = fs->block_bitmap_pointer;
-	unsigned char *inode_table = fs->inode_pointer;
+	// unsigned char *inode_table = fs->inode_pointer;
 
 	int new_blk = get_free_blk(fs);
 	update_bitmap_by_index(block_bitmap, new_blk, 1);
@@ -308,7 +308,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	int new_ino = get_free_ino(fs);
 	update_bitmap_by_index(inode_bitmap, new_ino, 1);
 	sb->free_inodes_count--;
-	struct a1fs_inode *new_inode = (struct a1fs_inode *)(inode_table + sizeof(struct a1fs_inode) * (new_ino));
+	struct a1fs_inode *new_inode = (struct a1fs_inode *)(fs->inode_pointer + sizeof(struct a1fs_inode) * (new_ino));
 	new_inode->mode = mode;
 	new_inode->links = 2;
 	new_inode->size = 0;
@@ -406,7 +406,6 @@ static int a1fs_rmdir(const char *path)
 
 	unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
 	unsigned char *block_bitmap = fs->block_bitmap_pointer;
-	unsigned char *inode_table = fs->inode_pointer;
 
 	// extract parant path
 	char *parent_path = get_path(path);
@@ -437,7 +436,7 @@ static int a1fs_rmdir(const char *path)
 	}
 	parent_inode.links --;
 	parent_inode.size -= sizeof(struct a1fs_dentry);
-	clock_gettime(CLOCK_REALTIME, &(parent_inode->mtime));
+	clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
 	parent_inode.entry_count --;
 	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode)); 
 
@@ -446,9 +445,9 @@ static int a1fs_rmdir(const char *path)
 	for(unsigned int i = 0; i < dir_inode.num_extents; i++){
 		// struct a1fs_extent extent = (struct a1fs_extent*)(fs->image + dir_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
 		struct a1fs_extent extent = extent_table[i];
-		memset(fs->image + extent->start*A1FS_BLOCK_SIZE, 0, extent->count * A1FS_BLOCK_SIZE);
-		for(unsigned int j = 0; j < extent->count; j++){
-			update_bitmap_by_index(block_bitmap, extent->start + j, 0);
+		memset(fs->image + extent.start*A1FS_BLOCK_SIZE, 0, extent.count * A1FS_BLOCK_SIZE);
+		for(unsigned int j = 0; j < extent.count; j++){
+			update_bitmap_by_index(block_bitmap, extent.start + j, 0);
 			sb->free_blocks_count++;
 		}
 	}
@@ -460,7 +459,7 @@ static int a1fs_rmdir(const char *path)
 	sb->free_inodes_count++;
 	dir_inode.links = 0;
 	memset(fs->inode_pointer + sizeof(struct a1fs_inode) * dir_inode.inode, 0, sizeof(a1fs_inode));
-	
+
 	return 0;
 }
 
