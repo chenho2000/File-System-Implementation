@@ -286,97 +286,97 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	fs_ctx *fs = get_fs();
 
 	//TODO: create a directory at given path with given mode
-	// (void)path;
-	// (void)mode;
-	// (void)fs;
-	// return -ENOSYS;
-	struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
+	(void)path;
+	(void)mode;
+	(void)fs;
+	return -ENOSYS;
+	// struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
 
-	if (sb->free_inodes_count <= 0 || sb->free_blocks_count < 2)
-	{
-		return -ENOSPC;
-	}
+	// if (sb->free_inodes_count <= 0 || sb->free_blocks_count < 2)
+	// {
+	// 	return -ENOSPC;
+	// }
 
-	unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
-	unsigned char *block_bitmap = fs->block_bitmap_pointer;
-	unsigned char *inode_table = fs->inode_pointer;
+	// unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
+	// unsigned char *block_bitmap = fs->block_bitmap_pointer;
+	// unsigned char *inode_table = fs->inode_pointer;
 
-	int new_blk = get_free_blk(fs);
-	update_bitmap_by_index(block_bitmap, new_blk, 1);
-	sb->free_blocks_count--;
+	// int new_blk = get_free_blk(fs);
+	// update_bitmap_by_index(block_bitmap, new_blk, 1);
+	// sb->free_blocks_count--;
 
-	int new_ino = get_free_ino(fs);
-	update_bitmap_by_index(inode_bitmap, new_ino, 1);
-	sb->free_inodes_count--;
-	struct a1fs_inode *new_inode = (struct a1fs_inode *)(inode_table + sizeof(struct a1fs_inode) * (new_ino));
-	new_inode->mode = mode;
-	new_inode->links = 2;
-	new_inode->size = 0;
-	clock_gettime(CLOCK_REALTIME, &(new_inode->mtime));
-	new_inode->inode = new_ino;
-	new_inode->entry_count = 0;
-	new_inode->num_extents = 0;
-	new_inode->extent_table = new_blk;
+	// int new_ino = get_free_ino(fs);
+	// update_bitmap_by_index(inode_bitmap, new_ino, 1);
+	// sb->free_inodes_count--;
+	// struct a1fs_inode *new_inode = (struct a1fs_inode *)(inode_table + sizeof(struct a1fs_inode) * (new_ino));
+	// new_inode->mode = mode;
+	// new_inode->links = 2;
+	// new_inode->size = 0;
+	// clock_gettime(CLOCK_REALTIME, &(new_inode->mtime));
+	// new_inode->inode = new_ino;
+	// new_inode->entry_count = 0;
+	// new_inode->num_extents = 0;
+	// new_inode->extent_table = new_blk;
 
-	// extract parant path
-	char *parent_path = get_path(path);
+	// // extract parant path
+	// char *parent_path = get_path(path);
 
-	// extract directory name
-	char *dir_name = get_name(path);
-	int found_dentry = 0;
-	struct a1fs_inode parent_inode;
-	get_inode_by_path(fs->image, fs, parent_path, &parent_inode);
-	for (unsigned int i = 0; i < parent_inode.num_extents; i++)
-	{
-		struct a1fs_extent *extent = (struct a1fs_extent *)(fs->image + parent_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
-		for (unsigned int j = 0; j < extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry); j++)
-		{
-			struct a1fs_dentry *new_dentry = (struct a1fs_dentry *)(fs->image + extent->start * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry) * j);
-			if (new_dentry->ino == 0 && strlen(new_dentry->name) == 0)
-			{
-				new_dentry->ino = new_ino;
-				strncpy(new_dentry->name, dir_name, strlen(dir_name) + 1);
-				found_dentry = 1;
-				break;
-			}
-		}
-		if (found_dentry == 1)
-			break;
-	}
+	// // extract directory name
+	// char *dir_name = get_name(path);
+	// int found_dentry = 0;
+	// struct a1fs_inode parent_inode;
+	// get_inode_by_path(fs->image, fs, parent_path, &parent_inode);
+	// for (unsigned int i = 0; i < parent_inode.num_extents; i++)
+	// {
+	// 	struct a1fs_extent *extent = (struct a1fs_extent *)(fs->image + parent_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
+	// 	for (unsigned int j = 0; j < extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry); j++)
+	// 	{
+	// 		struct a1fs_dentry *new_dentry = (struct a1fs_dentry *)(fs->image + extent->start * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry) * j);
+	// 		if (new_dentry->ino == 0 && strlen(new_dentry->name) == 0)
+	// 		{
+	// 			new_dentry->ino = new_ino;
+	// 			strncpy(new_dentry->name, dir_name, strlen(dir_name) + 1);
+	// 			found_dentry = 1;
+	// 			break;
+	// 		}
+	// 	}
+	// 	if (found_dentry == 1)
+	// 		break;
+	// }
 
-	//Not block available in parent inode creat new blocks for dentry
-	if (found_dentry == 0)
-	{
-		if (parent_inode.num_extents == 512) return -ENOSPC;
+	// //Not block available in parent inode creat new blocks for dentry
+	// if (found_dentry == 0)
+	// {
+	// 	if (parent_inode.num_extents == 512) return -ENOSPC;
 
-		int new_dentry_blk = get_free_blk(fs);
-		if (new_dentry_blk == -1)
-		{
-			return -ENOSPC;
-		}
-		update_bitmap_by_index(block_bitmap, new_dentry_blk, 1);
-		sb->free_blocks_count--;
+	// 	int new_dentry_blk = get_free_blk(fs);
+	// 	if (new_dentry_blk == -1)
+	// 	{
+	// 		return -ENOSPC;
+	// 	}
+	// 	update_bitmap_by_index(block_bitmap, new_dentry_blk, 1);
+	// 	sb->free_blocks_count--;
 
-		struct a1fs_extent *new_extent = (struct a1fs_extent *)(fs->image + parent_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * parent_inode.num_extents);
-		new_extent->start = new_dentry_blk;
-		new_extent->count = 1;
-		parent_inode.num_extents++;
+	// 	struct a1fs_extent *new_extent = (struct a1fs_extent *)(fs->image + parent_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * parent_inode.num_extents);
+	// 	new_extent->start = new_dentry_blk;
+	// 	new_extent->count = 1;
+	// 	parent_inode.num_extents++;
 
-		struct a1fs_dentry *new_entry = (struct a1fs_dentry *)(fs->image + new_dentry_blk * A1FS_BLOCK_SIZE);
-		new_entry->ino = new_ino;
-		strncpy(new_entry->name, dir_name, strlen(dir_name) + 1);
+	// 	struct a1fs_dentry *new_entry = (struct a1fs_dentry *)(fs->image + new_dentry_blk * A1FS_BLOCK_SIZE);
+	// 	new_entry->ino = new_ino;
+	// 	strncpy(new_entry->name, dir_name, strlen(dir_name) + 1);
 
-		found_dentry = 1;
-	}
+	// 	found_dentry = 1;
+	// }
 
-	// Update parant inode attribute
-	parent_inode.links++;
-	parent_inode.size += sizeof(struct a1fs_dentry);
-	clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
-	parent_inode.entry_count++;
-	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
+	// // Update parant inode attribute
+	// parent_inode.links++;
+	// parent_inode.size += sizeof(struct a1fs_dentry);
+	// clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
+	// parent_inode.entry_count++;
+	// memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
 
-	return 0;
+	// return 0;
 }
 
 /**
