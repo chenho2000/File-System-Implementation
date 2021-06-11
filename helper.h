@@ -44,6 +44,7 @@ static inline void print_bitmap(unsigned char *b, int end)
     fprintf(stderr, "\n---------------------------------------\n");
 }
 
+// just like ceil()
 static inline int ceil_divide(int a, int b)
 {
     int ans = a / b;
@@ -54,6 +55,7 @@ static inline int ceil_divide(int a, int b)
     return ans;
 }
 
+// find the inode with given inode number
 static inline int get_inode_by_inodenumber(fs_ctx *fs, unsigned int inode_num, struct a1fs_inode *inode)
 {
     fprintf(stderr, "Inode check%d\n",check_bit((fs->inode_bitmap_pointer)[inode_num / 8], inode_num % 8));
@@ -65,6 +67,7 @@ static inline int get_inode_by_inodenumber(fs_ctx *fs, unsigned int inode_num, s
     return 1;
 }
 
+// find the inode with given path
 static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, struct a1fs_inode *inode)
 {
     if (path[0] != '/')
