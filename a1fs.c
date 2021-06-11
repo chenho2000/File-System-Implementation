@@ -299,7 +299,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 
 	unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
 	unsigned char *block_bitmap = fs->block_bitmap_pointer;
-	// unsigned char *inode_table = fs->inode_pointer;
+	unsigned char *inode_table = fs->inode_pointer;
 
 	int new_blk = get_free_blk(fs);
 	update_bitmap_by_index(block_bitmap, new_blk, 1);
@@ -308,7 +308,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	int new_ino = get_free_ino(fs);
 	update_bitmap_by_index(inode_bitmap, new_ino, 1);
 	sb->free_inodes_count--;
-	struct a1fs_inode *new_inode = (struct a1fs_inode *)(fs->inode_pointer + sizeof(struct a1fs_inode) * (new_ino));
+	struct a1fs_inode *new_inode = (struct a1fs_inode *)(inode_table + sizeof(struct a1fs_inode) * (new_ino));
 	new_inode->mode = mode;
 	new_inode->links = 2;
 	new_inode->size = 0;
