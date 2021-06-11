@@ -427,10 +427,10 @@ static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	fs_ctx *fs = get_fs();
 
 	//TODO: create a file at given path with given mode
-	// (void)path;
-	// (void)mode;
-	// (void)fs;
-	// return -ENOSYS;
+	(void)path;
+	(void)mode;
+	(void)fs;
+	return -ENOSYS;
 	// struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
 	// if (sb->free_inodes_count == 0 || sb->free_blocks_count == 1)
 	// {
