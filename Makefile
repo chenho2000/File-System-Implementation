@@ -38,16 +38,16 @@ clean:
 # test code
 setup:
 	truncate -s 409600 image
-	./mkfs.a1fs -i 5 image
+	./mkfs.a1fs -i 16 image
 
 debug:
 	truncate -s 409600 image
-	./mkfs.a1fs -i 5 image
+	./mkfs.a1fs -i 16 image
 	gdb --args ./a1fs image /tmp/userid -d
 
 test:
 	truncate -s 409600 image
-	./mkfs.a1fs -i 10 image
+	./mkfs.a1fs -i 16 image
 	./a1fs image /tmp/userid
 	stat -f /tmp/userid
 	ls -la /tmp/userid
@@ -57,7 +57,7 @@ touch:
 	touch /tmp/userid/test
 testdir:
 	truncate -s 409600 image
-	./mkfs.a1fs -i 5 image
+	./mkfs.a1fs -i 16 image
 	./a1fs image /tmp/userid
 	stat -f /tmp/userid
 	ls -la /tmp/userid
