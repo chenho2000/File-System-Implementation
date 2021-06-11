@@ -286,10 +286,10 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	fs_ctx *fs = get_fs();
 
 	//TODO: create a directory at given path with given mode
-	(void)path;
-	(void)mode;
-	(void)fs;
-	return -ENOSYS;
+	// (void)path;
+	// (void)mode;
+	// (void)fs;
+	// return -ENOSYS;
 	struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
 
 	if (sb->free_inodes_count <= 0 || sb->free_blocks_count < 2)
