@@ -398,9 +398,70 @@ static int a1fs_rmdir(const char *path)
 	fs_ctx *fs = get_fs();
 
 	//TODO: remove the directory at given path (only if it's empty)
-	(void)path;
-	(void)fs;
-	return -ENOSYS;
+	// (void)path;
+	// (void)fs;
+	// return -ENOSYS;
+
+	struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
+
+	unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
+	unsigned char *block_bitmap = fs->block_bitmap_pointer;
+	unsigned char *inode_table = fs->inode_pointer;
+
+	// extract parant path
+	char *parent_path = get_path(path);
+	// extract directory name
+	char *dir_name = get_name(path);
+	
+	struct a1fs_inode parent_inode;
+	get_inode_by_path(fs->image, fs, parent_path, &parent_inode);
+
+	struct a1fs_inode dir_inode;
+	get_inode_by_path(fs->image, fs, path, &dir_inode);
+
+	// Check if dir is empty
+	if (dir_inode.links > 2){
+		return -ENOTEMPTY;
+	}
+
+	// Empty dentry
+	for(unsigned int i = 0; i < parent_inode.num_extents; i++){
+		struct a1fs_extent* extent = (struct a1fs_extent*)(fs->image + parent_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent)*i);
+		for(unsigned int j = 0; j < extent->count * A1FS_BLOCK_SIZE / sizeof(struct a1fs_dentry); j++){
+			struct a1fs_dentry* dentry = (struct a1fs_dentry*)(fs->image + extent->start*A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry)*j);
+			if(strcmp(dentry->name, dir_name) == 0){
+				memset(dentry, 0, sizeof(struct a1fs_dentry));  
+				break;
+			}
+		}	
+	}
+	parent_inode.links --;
+	parent_inode.size -= sizeof(struct a1fs_dentry);
+	clock_gettime(CLOCK_REALTIME, &(parent_inode->mtime));
+	parent_inode.entry_count --;
+	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode)); 
+
+	// Empty dir inode
+	struct a1fs_extent* extent_table = (struct a1fs_extent*)(fs->image + dir_inode.extent_table * A1FS_BLOCK_SIZE);
+	for(unsigned int i = 0; i < dir_inode.num_extents; i++){
+		// struct a1fs_extent extent = (struct a1fs_extent*)(fs->image + dir_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
+		struct a1fs_extent extent = extent_table[i];
+		memset(fs->image + extent->start*A1FS_BLOCK_SIZE, 0, extent->count * A1FS_BLOCK_SIZE);
+		for(unsigned int j = 0; j < extent->count; j++){
+			update_bitmap_by_index(block_bitmap, extent->start + j, 0);
+			sb->free_blocks_count++;
+		}
+	}
+	update_bitmap_by_index(block_bitmap, dir_inode.extent_table, 0);
+	sb->free_blocks_count++;
+	memset(extent_table, 0, A1FS_BLOCK_SIZE);
+	
+	update_bitmap_by_index(inode_bitmap, dir_inode.inode, 0);
+	sb->free_inodes_count++;
+	dir_inode.links = 0;
+	memset(fs->inode_pointer + sizeof(struct a1fs_inode) * dir_inode.inode, 0, sizeof(a1fs_inode));
+	
+	return 0;
 }
 
 /**
