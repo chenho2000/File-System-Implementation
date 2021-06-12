@@ -771,44 +771,53 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	fs_ctx *fs = get_fs();
 
 	//TODO: read data from the file at given offset into the buffer
-	a1fs_superblock *sb = (a1fs_superblock *)fs->image;
-	struct a1fs_inode inode;
-	// find the file inode we want to read
-	int get_inode = get_inode_by_path(fs->image, fs, path, &inode);
-	if (get_inode != 0)
-	{
-		return -errno;
-	}
-	else if (offset >= (int)sb->size || offset >= (int)inode.size)
-	{
-		return 0;
-	}
-	// create a list to save stuff in the file
-	char ans[size];
-	char *ans_pointer = ans;
-	memset(ans, 0, size);
-	int curr = size;
-	for (int i = 0; i < (int)(inode.num_extents); i++)
-	{
-		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
-		int total_size = (curr_extent->count) * A1FS_BLOCK_SIZE;
-		unsigned char *data_pointer = fs->image + (curr_extent->start) * A1FS_BLOCK_SIZE;
-		if (curr > total_size)
-		{
-			memcpy(ans_pointer, data_pointer, total_size);
-		}
-		else
-		{
-			memcpy(ans_pointer, data_pointer, curr);
-			break;
-		}
-		ans_pointer += total_size;
-		curr -= total_size;
-	}
-	// copy the ans to buf
-	memcpy(buf, ans + offset, size);
+	(void)path;
+	(void)buf;
+	(void)size;
+	(void)offset;
+	(void)fs;
+	return -ENOSYS;
+	// if (size <= 0)
+	// {
+	// 	return 0;
+	// }
+	// a1fs_superblock *sb = (a1fs_superblock *)fs->image;
+	// struct a1fs_inode inode;
+	// // find the file inode we want to read
+	// if (get_inode_by_path(fs->image, fs, path, &inode) != 0)
+	// {
+	// 	return -errno;
+	// }
+	// else if (offset >= (int)sb->size || offset >= (int)inode.size)
+	// {
+	// 	return 0;
+	// }
+	// // create a list to save stuff in the file
+	// char ans[size];
+	// char *ans_pointer = ans;
+	// memset(ans, 0, size);
+	// int curr = size;
+	// for (int i = 0; i < (int)(inode.num_extents); i++)
+	// {
+	// 	struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
+	// 	int total_size = (curr_extent->count) * A1FS_BLOCK_SIZE;
+	// 	unsigned char *data_pointer = fs->image + (curr_extent->start) * A1FS_BLOCK_SIZE;
+	// 	if (curr > total_size)
+	// 	{
+	// 		memcpy(ans_pointer, data_pointer, total_size);
+	// 	}
+	// 	else
+	// 	{
+	// 		memcpy(ans_pointer, data_pointer, curr);
+	// 		break;
+	// 	}
+	// 	ans_pointer += total_size;
+	// 	curr -= total_size;
+	// }
+	// // copy the ans to buf
+	// memcpy(buf, ans + offset, size);
 
-	return 0;
+	// return 0;
 }
 
 /**
@@ -849,6 +858,57 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 	(void)offset;
 	(void)fs;
 	return -ENOSYS;
+	// unsigned char *disk = (unsigned char *)fs->image;
+	// a1fs_superblock *sb = (a1fs_superblock *)disk;
+	// if (size <= 0)
+	// 	return 0;
+	// struct a1fs_inode file_inode;
+	// // find the file inode we want to write
+	// if (get_inode_by_path(fs->image, fs, path, &file_inode) != 0)
+	// {
+	// 	return -errno;
+	// }
+	// if (file_inode.size < size + offset)
+	// {
+	// 	int s = a1fs_truncate(path, (off_t)(size + offset));
+	// 	if (s)
+	// 	{
+	// 		return s;
+	// 	}
+	// 	// update inode
+	// 	else if (get_inode_by_path(fs->image, fs, path, &file_inode) != 0)
+	// 	{
+	// 		return -errno;
+	// 	}
+	// }
+	// // block index which the write point begin
+	// int start_count;
+	// int start_rmd;
+	// int extent_idx = 0;
+	// struct a1fs_extent *curr_extent;
+	// // check where we want to write in
+	// while (offset > 0)
+	// {
+	// 	curr_extent = (a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(a1fs_extent) * extent_idx);
+	// 	if (curr_extent->count * A1FS_BLOCK_SIZE >= offset)
+	// 	{
+	// 		start_count = offset / A1FS_BLOCK_SIZE;
+	// 		start_rmd = offset % A1FS_BLOCK_SIZE;
+	// 		break;
+	// 	}
+	// 	offset -= curr_extent->count * A1FS_BLOCK_SIZE;
+	// 	extent_idx++;
+	// }
+	// // if not enough space for all data to write in
+	// if ((curr_extent->count - start_count) * A1FS_BLOCK_SIZE - start_rmd < size)
+	// {
+	// 	return -ENOSPC;
+	// }
+	// // start to write
+	// clock_gettime(CLOCK_REALTIME, &(file_inode.mtime));
+	// unsigned char *start_pointer = fs->image + (curr_extent->start + start_count) * A1FS_BLOCK_SIZE + start_rmd;
+	// memcpy(start_pointer, buf, size);
+	// return size;
 }
 
 static struct fuse_operations a1fs_ops = {
