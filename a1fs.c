@@ -793,11 +793,11 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	// 	return 0;
 	// }
 	// // create a list to save stuff in the file
-	// char ans[size];
+	// char ans[size + offset];
 	// char *ans_pointer = ans;
-	// memset(ans, 0, size);
-	// int curr = size;
-	// for (int i = 0; i < (int)(inode.num_extents); i++)
+	// memset(ans_pointer, 0, size + offset);
+	// int curr = size + offset;
+	// for (unsigned long int i = 0; i < inode.num_extents; i++)
 	// {
 	// 	struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
 	// 	int total_size = (curr_extent->count) * A1FS_BLOCK_SIZE;
