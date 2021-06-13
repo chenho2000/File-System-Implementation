@@ -211,8 +211,8 @@ static inline char *get_name(const char *path)
     return file_name;
 }
 
-/** R
- * emove directory/file name from given path 
+/** 
+ * Remove directory/file name from given path 
  * return modifeid path 
  */
 static inline char *get_path(const char *path)
@@ -228,4 +228,82 @@ static inline char *get_path(const char *path)
         parent_path[1] = '\0';
     }
     return parent_path;
+}
+
+/**
+ * Get the consecutive free blocks number by given length(extend_blocks)
+ * Priority 1: there are enough free blocks after the last used block
+ * Priority 2: find the first appeared enough free blocks
+ * Return -1 if there are no enough free blocks
+ */
+ 
+static inline int get_blk_by_length(fs_ctx* fs, unsigned int extend_blocks){
+    struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
+    unsigned int blocks_count = sb->blocks_count;
+    int found  = -1;
+    unsigned int last_block = -1;
+    for (unsigned int i = 0; i < blocks_count; i++)
+    {   
+        
+        if (check_bit((fs->block_bitmap_pointer)[i / 8], i % 8) == 0 && found == -1)
+        {   
+            if (i + extend_blocks > blocks_count) return -1;
+                
+            found = i;
+            for (unsigned int j = i + 1; j < i + extend_blocks - 1; j++){
+
+                if (check_bit((fs->block_bitmap_pointer)[j / 8], j % 8) == 1){
+                    found = -1;
+                    break;
+                }
+            }
+
+        }
+        if (check_bit((fs->block_bitmap_pointer)[i / 8], i % 8) == 1){
+            last_block = i;
+        }
+    }
+    if (last_block + extend_blocks > blocks_count) return found;
+    for (unsigned int k = last_block + 1; k < last_block + extend_blocks - 1; k++){
+        if (check_bit((fs->block_bitmap_pointer)[k / 8], k % 8) == 1){
+            return found;
+            }
+    }
+    return last_block;
+    
+}
+
+/**
+ * Get the longest consecutive free blocks number 
+ * Update longest_blocks_count
+ * Return -1 if there are no free blocks
+ */
+static inline int get_consecutive_blk(fs_ctx* fs, unsigned int* longest_blocks_count)
+{
+    struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
+    unsigned int blocks_count = sb->blocks_count;
+    int max = 0;
+    unsigned int i = 0;
+    int start = -1;
+    while(i < blocks_count){
+        int count = 0;
+        if (check_bit((fs->block_bitmap_pointer)[i / 8], i % 8) == 0){
+            for (unsigned int j = i; j < blocks_count; j++){
+                if (check_bit((fs->block_bitmap_pointer)[j / 8], i % 8) == 0){
+                    count++;
+                }
+                else{
+                    break;
+                }
+            }
+            if (count > max){
+                start = i;
+                max = count;
+            }
+            i += count;
+        }
+        else count++;
+    }
+    *longest_blocks_count = max;
+    return start;
 }
