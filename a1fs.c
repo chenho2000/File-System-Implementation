@@ -240,22 +240,40 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	if (filler(buf, "..", NULL, 0) != 0)
 		return -ENOMEM;
 	struct a1fs_inode curr_inode;
-	void *image = fs->image;
 	int get_inode = get_inode_by_path(fs->image, fs, path, &curr_inode);
 	if (get_inode != 0)
 	{
 		return -errno;
 	}
-	// go through every extents and entry, call filler(buf, name, NULL, 0) for each directory entry.
-	for (unsigned int i = 0; i < curr_inode.num_extents; i++)
+	if (S_ISDIR(curr_inode.mode | S_IFDIR) == 0)
 	{
-		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(image + curr_inode.extent_table * A1FS_BLOCK_SIZE + i * sizeof(struct a1fs_extent));
-		for (int j = 0; j < curr_inode.entry_count; j++)
+		return 0;
+	}
+	// go through every extents and entry, call filler(buf, name, NULL, 0) for each directory entry.
+	int curr_entry = 0;
+	// iterate through each extent of the directory
+	for (long unsigned int i = 0; i < curr_inode.num_extents; i++)
+	{
+		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + curr_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
+		if (curr_extent->start == 0)
 		{
-			struct a1fs_dentry *entry = (struct a1fs_dentry *)(image + curr_extent->start * A1FS_BLOCK_SIZE + j * sizeof(struct a1fs_dentry));
-			if (filler(buf, entry->name, NULL, 0) != 0)
+			continue;
+		}
+		for (long unsigned int j = 0; j < (curr_extent->count * A1FS_BLOCK_SIZE) / sizeof(a1fs_dentry); j++)
+		{
+			struct a1fs_dentry *curr_dentry = (struct a1fs_dentry *)(fs->image + curr_extent->start * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry) * j);
+			if (curr_dentry->ino == 0)
+			{
+				continue;
+			}
+			if (filler(buf, curr_dentry->name, NULL, 0) != 0)
 			{
 				return -ENOMEM;
+			}
+			curr_entry++;
+			if (curr_entry == curr_inode.entry_count)
+			{
+				break;
 			}
 		}
 	}
