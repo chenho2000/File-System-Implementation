@@ -910,7 +910,7 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	// copy the ans to buf
 	memcpy(buf, ans + offset, size);
 
-	// return 0;
+	return 0;
 }
 
 /**
@@ -951,8 +951,6 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 	// (void)offset;
 	// (void)fs;
 	// return -ENOSYS;
-	unsigned char *disk = (unsigned char *)fs->image;
-	a1fs_superblock *sb = (a1fs_superblock *)disk;
 	if (size <= 0)
 		return 0;
 	struct a1fs_inode file_inode;

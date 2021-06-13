@@ -32,7 +32,6 @@ bool fs_ctx_init(fs_ctx *fs, void *image, size_t size)
 
 	//extract the super block from image address
 	struct a1fs_superblock *sb = (struct a1fs_superblock *)image;
-	fs->super_block_pointer = sb;
 	fs->inode_bitmap_pointer = (unsigned char *)(image + sb->first_ino_bitmap * A1FS_BLOCK_SIZE);
 	fs->block_bitmap_pointer = (unsigned char *)(image + sb->first_blo_bitmap * A1FS_BLOCK_SIZE);
 	fs->inode_pointer = (unsigned char *)(image + sb->first_ino * A1FS_BLOCK_SIZE);
