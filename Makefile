@@ -51,7 +51,10 @@ test:
 	./a1fs image /tmp/userid
 	stat -f /tmp/userid
 	ls -la /tmp/userid
-	touch /tmp/userid/test
+	touch /tmp/userid/test1
+	touch /tmp/userid/test2
+	touch /tmp/userid/test3
+	rm /tmp/userid/test1
 
 touch:
 	touch /tmp/userid/test
