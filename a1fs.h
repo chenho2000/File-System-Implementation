@@ -120,7 +120,7 @@ typedef struct a1fs_inode {
 	int entry_count;
 	unsigned int  num_extents;  /* number of extent */
 	unsigned int extent_table;
-
+	char padding[9];
 
 } a1fs_inode;
 
