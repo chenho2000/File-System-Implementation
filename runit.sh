@@ -1,5 +1,5 @@
 #!/bin/bash
-root="/tmp/gongmin9"
+root="/tmp/chenho92"
 # Modify your path
 echo "Setup"
 echo ""

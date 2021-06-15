@@ -799,6 +799,7 @@ static int a1fs_truncate(const char *path, off_t size)
 			struct a1fs_extent *new_extent = (struct a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * file_inode.num_extents);
 			new_extent->start = start;
 			new_extent->count = count;
+			fprintf(stderr, "start: %d count: %d", start,count);
 			for (unsigned int i = 0; i < count; i++)
 			{
 				update_bitmap_by_index(block_bitmap, new_extent->start + i, 1);
@@ -903,15 +904,31 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 		return 0;
 	}
 	// create a list to save stuff in the file
-	char ans[size + offset];
+	char ans[size];
 	char *ans_pointer = ans;
-	memset(ans_pointer, 0, size + offset);
-	int curr = size + offset;
+	memset(ans_pointer, 0, size);
+	if (size > inode.size){
+		size = inode.size;
+	}
+	int curr = size;
 	for (unsigned long int i = 0; i < inode.num_extents; i++)
 	{
 		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
 		int total_size = (curr_extent->count) * A1FS_BLOCK_SIZE;
-		unsigned char *data_pointer = fs->image + (curr_extent->start + i) * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry);
+		unsigned char *data_pointer = fs->image + (curr_extent->start + curr_extent->count - 1) * A1FS_BLOCK_SIZE;
+		if (curr_extent->count == 1){
+			data_pointer = fs->image + (curr_extent->start + curr_extent->count - 1) * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry);
+		}
+		if (offset > 0){
+			if (offset >= total_size){
+				offset -= total_size;
+				continue;
+			}
+			data_pointer += offset;
+			total_size -= offset;
+			offset = 0;
+			
+		}
 		if (curr > total_size)
 		{
 			memcpy(ans_pointer, data_pointer, total_size);
@@ -925,7 +942,7 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 		curr -= total_size;
 	}
 	// copy the ans to buf
-	memcpy(buf, ans + offset, size);
+	memcpy(buf, ans, size);
 
 	return size;
 }
