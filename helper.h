@@ -222,8 +222,9 @@ static inline int get_blk_by_length(fs_ctx* fs, unsigned int extend_blocks){
             last_block = i;
         }
     }
+    last_block ++;
     if (last_block + extend_blocks > blocks_count) return found;
-    for (unsigned int k = last_block + 1; k < last_block + extend_blocks - 1; k++){
+    for (unsigned int k = last_block; k < last_block + extend_blocks; k++){
         if (check_bit((fs->block_bitmap_pointer)[k / 8], k % 8) > 0){
             return found;
             }
