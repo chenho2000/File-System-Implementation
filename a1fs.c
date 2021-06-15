@@ -311,10 +311,10 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	// return -ENOSYS;
 	struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
 
-	// if (sb->free_inodes_count <= 0 || sb->free_blocks_count < 2)
-	// {
-	// 	return -ENOSPC;
-	// }
+	if (sb->free_inodes_count == 0 || sb->free_blocks_count < 2)
+	{
+		return -ENOSPC;
+	}
 
 	unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
 	unsigned char *block_bitmap = fs->block_bitmap_pointer;
@@ -780,6 +780,7 @@ static int a1fs_truncate(const char *path, off_t size)
 		while (extend_blocks > 0)
 		{
 			unsigned int count = 0;
+			// Get the enough free blocks from the end of extents or the exact length from the beginning if no space avaiable from the end.
 			int start = get_blk_by_length(fs, extend_blocks);
 			if (start != -1)
 			{
@@ -787,7 +788,8 @@ static int a1fs_truncate(const char *path, off_t size)
 				extend_blocks = 0;
 			}
 			else
-			{
+			{	
+				// Get the max consecutive blocks if no free blocks meet the size requirement.
 				start = get_consecutive_blk(fs, &count);
 				extend_blocks -= count;
 			}
@@ -808,10 +810,12 @@ static int a1fs_truncate(const char *path, off_t size)
 	{
 		unsigned int shrink_blocks = file_blocks - truncated_blocks;
 		struct a1fs_extent *extent_table = (struct a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE);
+		// Back traversal file inode extents to shrink from the end.
 		for (int i = file_inode.num_extents - 1; i >= 0; i--)
 		{
 			struct a1fs_extent extent = extent_table[i];
-			if (extent.count < shrink_blocks)
+			// shrink whole extent
+			if (extent.count <= shrink_blocks)
 			{
 				for (unsigned int j = 0; j < extent.count; j++)
 				{
@@ -823,6 +827,7 @@ static int a1fs_truncate(const char *path, off_t size)
 				file_inode.num_extents--;
 				shrink_blocks -= extent.count;
 			}
+			//shrink some blocks
 			else
 			{
 				unsigned int shrink_start = extent.start + extent.count - shrink_blocks;
