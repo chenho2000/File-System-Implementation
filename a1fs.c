@@ -318,7 +318,6 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 
 	unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
 	unsigned char *block_bitmap = fs->block_bitmap_pointer;
-	// unsigned char *inode_table = fs->inode_pointer;
 
 	int new_blk = get_free_blk(fs);
 	int new_ino = get_free_ino(fs);
@@ -395,7 +394,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	parent_inode.size += sizeof(struct a1fs_dentry);
 	clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
 	parent_inode.entry_count++;
-	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
+	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(struct a1fs_inode));
 
 	return 0;
 }
@@ -463,7 +462,7 @@ static int a1fs_rmdir(const char *path)
 	parent_inode.size -= sizeof(struct a1fs_dentry);
 	clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
 	parent_inode.entry_count--;
-	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
+	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(struct a1fs_inode));
 
 	// Empty dir inode
 	struct a1fs_extent *extent_table = (struct a1fs_extent *)(fs->image + dir_inode.extent_table * A1FS_BLOCK_SIZE);
@@ -485,7 +484,7 @@ static int a1fs_rmdir(const char *path)
 	update_bitmap_by_index(inode_bitmap, dir_inode.inode, 0);
 	sb->free_inodes_count++;
 	dir_inode.links = 0;
-	memset(fs->inode_pointer + sizeof(struct a1fs_inode) * dir_inode.inode, 0, sizeof(a1fs_inode));
+	memset(fs->inode_pointer + sizeof(struct a1fs_inode) * dir_inode.inode, 0, sizeof(struct a1fs_inode));
 
 	return 0;
 }
@@ -574,7 +573,7 @@ static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 				parent_inode.entry_count++;
 				clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
 				strncpy(curr_dentry->name, file_name, strlen(file_name) + 1);
-				memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
+				memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(struct a1fs_inode));
 				return 0;
 			}
 		}
@@ -599,7 +598,7 @@ static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	parent_inode.size += sizeof(struct a1fs_dentry);
 	clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
 	// write the parent inode into the image
-	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
+	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(struct a1fs_inode));
 	return 0;
 }
 
@@ -657,7 +656,7 @@ static int a1fs_unlink(const char *path)
 	parent_inode.size -= sizeof(struct a1fs_dentry);
 	clock_gettime(CLOCK_REALTIME, &(parent_inode.mtime));
 	parent_inode.entry_count--;
-	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(a1fs_inode));
+	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * parent_inode.inode, &parent_inode, sizeof(struct a1fs_inode));
 
 	// Empty dir inode
 	struct a1fs_extent *extent_table = (struct a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE);
@@ -679,7 +678,7 @@ static int a1fs_unlink(const char *path)
 	update_bitmap_by_index(inode_bitmap, file_inode.inode, 0);
 	sb->free_inodes_count++;
 	// reset inode
-	memset(fs->inode_pointer + sizeof(struct a1fs_inode) * file_inode.inode, 0, sizeof(a1fs_inode));
+	memset(fs->inode_pointer + sizeof(struct a1fs_inode) * file_inode.inode, 0, sizeof(struct a1fs_inode));
 	return 0;
 }
 
@@ -720,7 +719,7 @@ static int a1fs_utimens(const char *path, const struct timespec times[2])
 		inode.mtime.tv_nsec = times[1].tv_nsec;
 		unsigned int ino = inode.inode;
 		unsigned char *inode_pointer = fs->inode_pointer;
-		memcpy(sizeof(struct a1fs_inode) * ino + inode_pointer, &inode, sizeof(a1fs_inode));
+		memcpy(sizeof(struct a1fs_inode) * ino + inode_pointer, &inode, sizeof(struct a1fs_inode));
 	}
 	else
 	// if no input time
@@ -728,7 +727,7 @@ static int a1fs_utimens(const char *path, const struct timespec times[2])
 		clock_gettime(CLOCK_REALTIME, &(inode.mtime));
 		unsigned int ino = inode.inode;
 		unsigned char *inode_pointer = fs->inode_pointer;
-		memcpy(sizeof(struct a1fs_inode) * ino + inode_pointer, &inode, sizeof(a1fs_inode));
+		memcpy(sizeof(struct a1fs_inode) * ino + inode_pointer, &inode, sizeof(struct a1fs_inode));
 	}
 	return 0;
 }
@@ -842,7 +841,7 @@ static int a1fs_truncate(const char *path, off_t size)
 	}
 	file_inode.size = size;
 	clock_gettime(CLOCK_REALTIME, &(file_inode.mtime));
-	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * file_inode.inode, &file_inode, sizeof(a1fs_inode));
+	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * file_inode.inode, &file_inode, sizeof(struct a1fs_inode));
 	return 0;
 }
 
@@ -986,11 +985,11 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 	int start_count = 0;
 	int start_rmd = 0;
 	int extent_idx = 0;
-	struct a1fs_extent *curr_extent = (a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(a1fs_extent) * extent_idx);
+	struct a1fs_extent *curr_extent = (a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * extent_idx);
 	// check where we want to write in
 	while (offset > 0)
 	{
-		curr_extent = (a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(a1fs_extent) * extent_idx);
+		curr_extent = (a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * extent_idx);
 		if (curr_extent->count * A1FS_BLOCK_SIZE >= offset)
 		{
 			start_count = offset / A1FS_BLOCK_SIZE;
