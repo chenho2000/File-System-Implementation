@@ -911,7 +911,7 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	{
 		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
 		int total_size = (curr_extent->count) * A1FS_BLOCK_SIZE;
-		unsigned char *data_pointer = fs->image + (curr_extent->start) * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry);
+		unsigned char *data_pointer = fs->image + (curr_extent->start + i) * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry);
 		if (curr > total_size)
 		{
 			memcpy(ans_pointer, data_pointer, total_size);
