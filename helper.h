@@ -58,7 +58,6 @@ static inline int ceil_divide(int a, int b)
 // find the inode with given inode number
 static inline int get_inode_by_inodenumber(fs_ctx *fs, unsigned int inode_num, struct a1fs_inode *inode)
 {
-    fprintf(stderr, "Inode check%d\n",check_bit((fs->inode_bitmap_pointer)[inode_num / 8], inode_num % 8));
     if (check_bit((fs->inode_bitmap_pointer)[inode_num / 8], inode_num % 8) > 0)
     {
         *inode = *(struct a1fs_inode *)((fs->inode_pointer) + sizeof(struct a1fs_inode) * inode_num);
@@ -72,7 +71,6 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
 {
     if (path[0] != '/')
     {
-        fprintf(stderr, "\n--------------------0-------------------\n");
         return -ENOTDIR;
     }
     if (strlen(path) >= A1FS_PATH_MAX)
@@ -85,7 +83,6 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
     {
         if (get_inode_by_inodenumber(fs, 0, inode) != 0)
         {
-            fprintf(stderr, "\n--------------------1-------------------\n");
             return -ENOTDIR;
         }
         return 0;
@@ -97,7 +94,6 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
         bool notfound = true;
         if (strlen(p) > A1FS_NAME_MAX)
         {
-            fprintf(stderr, "\n-----------------------6----------------\n");
             return -ENOENT;
         }
         for (unsigned int i = 0; i < curr_inode.num_extents; i++)
@@ -117,9 +113,7 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
                     if (p == NULL)
                     {
                         if (get_inode_by_inodenumber(fs, curr_entry->ino, &curr_inode) != 0)
-                        {   print_bitmap(fs->inode_bitmap_pointer, 16);
-                            fprintf(stderr, "Inode %d\n",curr_entry->ino);
-                            fprintf(stderr, "\n---------------------2------------------\n");
+                        {   
                             return -ENOTDIR;
                         }
                     }
@@ -127,16 +121,13 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
                     {
                         if (get_inode_by_inodenumber(fs, curr_entry->ino, &curr_inode) != 0)
                         {
-                            fprintf(stderr, "\n---------------------3------------------\n");
                             return -ENOTDIR;
                         }
                         if (!(curr_inode.mode & S_IFDIR))
                         {
-                            fprintf(stderr, "\n-----------------------4----------------\n");
                             return -ENOTDIR;
                         }
                     }
-
                     break;
                 }
             }
@@ -144,7 +135,6 @@ static inline int get_inode_by_path(void *image, fs_ctx *fs, const char *path, s
 
         if (notfound)
         {
-            fprintf(stderr, "\n-----------------------5----------------\n");
             return -ENOENT;
         }
     }
@@ -252,20 +242,20 @@ static inline int get_blk_by_length(fs_ctx* fs, unsigned int extend_blocks){
             found = i;
             for (unsigned int j = i + 1; j < i + extend_blocks - 1; j++){
 
-                if (check_bit((fs->block_bitmap_pointer)[j / 8], j % 8) == 1){
+                if (check_bit((fs->block_bitmap_pointer)[j / 8], j % 8) > 0){
                     found = -1;
                     break;
                 }
             }
 
         }
-        if (check_bit((fs->block_bitmap_pointer)[i / 8], i % 8) == 1){
+        if (check_bit((fs->block_bitmap_pointer)[i / 8], i % 8) > 0){
             last_block = i;
         }
     }
     if (last_block + extend_blocks > blocks_count) return found;
     for (unsigned int k = last_block + 1; k < last_block + extend_blocks - 1; k++){
-        if (check_bit((fs->block_bitmap_pointer)[k / 8], k % 8) == 1){
+        if (check_bit((fs->block_bitmap_pointer)[k / 8], k % 8) > 0){
             return found;
             }
     }

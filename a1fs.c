@@ -759,39 +759,44 @@ static int a1fs_truncate(const char *path, off_t size)
 	// (void)path;
 	// (void)size;
 	// (void)fs;
-	// return -ENOSYS;
+	// return -ENOSYS;.
 	struct a1fs_superblock *sb = (struct a1fs_superblock *)fs->image;
 	// unsigned char *inode_bitmap = fs->inode_bitmap_pointer;
 	unsigned char *block_bitmap = fs->block_bitmap_pointer;
-
 	struct a1fs_inode file_inode;
 	get_inode_by_path(fs->image, fs, path, &file_inode);
 
 	unsigned int truncated_blocks = ceil_divide(size, A1FS_BLOCK_SIZE);
 	unsigned int file_blocks = ceil_divide(file_inode.size, A1FS_BLOCK_SIZE);
-	
+
 	unsigned int file_inode_size = file_inode.size;
 	// Extend
-	if (file_inode_size < size){
+	if (file_inode_size < size)
+	{
 		unsigned int extend_blocks = truncated_blocks - file_blocks;
-		if (extend_blocks > sb->free_blocks_count){
+		if (extend_blocks > sb->free_blocks_count)
+		{
 			return -ENOSPC;
 		}
-		while(extend_blocks > 0){
+		while (extend_blocks > 0)
+		{
 			unsigned int count = 0;
 			int start = get_blk_by_length(fs, extend_blocks);
-			if(start != -1) {
+			if (start != -1)
+			{
 				count = extend_blocks;
 				extend_blocks = 0;
 			}
-			else{
+			else
+			{
 				start = get_consecutive_blk(fs, &count);
 				extend_blocks -= count;
 			}
 			struct a1fs_extent *new_extent = (struct a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * file_inode.num_extents);
 			new_extent->start = start;
 			new_extent->count = count;
-			for (unsigned int i = 0; i < count; i++){
+			for (unsigned int i = 0; i < count; i++)
+			{
 				update_bitmap_by_index(block_bitmap, new_extent->start + i, 1);
 				sb->free_blocks_count--;
 			}
@@ -800,13 +805,17 @@ static int a1fs_truncate(const char *path, off_t size)
 	}
 
 	// Shrink
-	else if (file_inode_size > size){
+	else if (file_inode_size > size)
+	{
 		unsigned int shrink_blocks = file_blocks - truncated_blocks;
 		struct a1fs_extent *extent_table = (struct a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE);
-		for (int i = file_inode.num_extents - 1; i >= 0; i--){
+		for (int i = file_inode.num_extents - 1; i >= 0; i--)
+		{
 			struct a1fs_extent extent = extent_table[i];
-			if (extent.count < shrink_blocks){
-				for (unsigned int j = 0; j < extent.count; j++){
+			if (extent.count < shrink_blocks)
+			{
+				for (unsigned int j = 0; j < extent.count; j++)
+				{
 					update_bitmap_by_index(block_bitmap, extent.start + j, 0);
 					sb->free_blocks_count++;
 				}
@@ -815,26 +824,27 @@ static int a1fs_truncate(const char *path, off_t size)
 				file_inode.num_extents--;
 				shrink_blocks -= extent.count;
 			}
-			else{
-				unsigned int shrink_start = extent.start+extent.count-shrink_blocks;
-				for (unsigned int j = 0; j<shrink_blocks; j++){
-					update_bitmap_by_index(block_bitmap, shrink_start+j, 0);
+			else
+			{
+				unsigned int shrink_start = extent.start + extent.count - shrink_blocks;
+				for (unsigned int j = 0; j < shrink_blocks; j++)
+				{
+					update_bitmap_by_index(block_bitmap, shrink_start + j, 0);
 					sb->free_blocks_count++;
 				}
 				memset(fs->image + shrink_start * A1FS_BLOCK_SIZE, 0, shrink_blocks * A1FS_BLOCK_SIZE);
 				extent.count -= shrink_blocks;
 				shrink_blocks = 0;
+				memcpy(extent_table + sizeof(struct a1fs_extent) * i, &extent, sizeof(struct a1fs_extent));
 				break;
 			}
 		}
-
 	}
 	file_inode.size = size;
 	clock_gettime(CLOCK_REALTIME, &(file_inode.mtime));
-	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * file_inode.inode , &file_inode, sizeof(a1fs_inode));
+	memcpy(fs->inode_pointer + sizeof(struct a1fs_inode) * file_inode.inode, &file_inode, sizeof(a1fs_inode));
 	return 0;
 }
-
 
 /**
  * Read data from a file.
@@ -894,7 +904,7 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	{
 		struct a1fs_extent *curr_extent = (struct a1fs_extent *)(fs->image + inode.extent_table * A1FS_BLOCK_SIZE + sizeof(struct a1fs_extent) * i);
 		int total_size = (curr_extent->count) * A1FS_BLOCK_SIZE;
-		unsigned char *data_pointer = fs->image + (curr_extent->start) * A1FS_BLOCK_SIZE;
+		unsigned char *data_pointer = fs->image + (curr_extent->start + 1) * A1FS_BLOCK_SIZE;
 		if (curr > total_size)
 		{
 			memcpy(ans_pointer, data_pointer, total_size);
@@ -997,7 +1007,7 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 	}
 	// start to write
 	clock_gettime(CLOCK_REALTIME, &(file_inode.mtime));
-	unsigned char *start_pointer = fs->image + (curr_extent->start + start_count) * A1FS_BLOCK_SIZE + start_rmd;
+	unsigned char *start_pointer = fs->image + (curr_extent->start + start_count + 1) * A1FS_BLOCK_SIZE + start_rmd;
 	memcpy(start_pointer, buf, size);
 	return size;
 }
