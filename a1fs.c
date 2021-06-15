@@ -825,7 +825,7 @@ static int a1fs_truncate(const char *path, off_t size)
 					update_bitmap_by_index(block_bitmap, extent.start + j, 0);
 					sb->free_blocks_count++;
 				}
-				memset(fs->image + extent.start * A1FS_BLOCK_SIZE, 0, extent.count * A1FS_BLOCK_SIZE);
+				memset(fs->image + extent.start * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry), 0, extent.count * A1FS_BLOCK_SIZE);
 				memset(extent_table + sizeof(struct a1fs_extent) * i, 0, sizeof(struct a1fs_extent));
 				file_inode.num_extents--;
 				shrink_blocks -= extent.count;
@@ -839,7 +839,7 @@ static int a1fs_truncate(const char *path, off_t size)
 					update_bitmap_by_index(block_bitmap, shrink_start + j, 0);
 					sb->free_blocks_count++;
 				}
-				memset(fs->image + shrink_start * A1FS_BLOCK_SIZE, 0, shrink_blocks * A1FS_BLOCK_SIZE);
+				memset(fs->image + shrink_start * A1FS_BLOCK_SIZE + sizeof(struct a1fs_dentry), 0, shrink_blocks * A1FS_BLOCK_SIZE);
 				extent.count -= shrink_blocks;
 				shrink_blocks = 0;
 				memcpy(extent_table + sizeof(struct a1fs_extent) * i, &extent, sizeof(struct a1fs_extent));
