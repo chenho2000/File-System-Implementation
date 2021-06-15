@@ -973,8 +973,8 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 		}
 	}
 	// block index which the write point begin
-	int start_count;
-	int start_rmd;
+	int start_count = 0;
+	int start_rmd = 0;
 	int extent_idx = 0;
 	struct a1fs_extent *curr_extent = (a1fs_extent *)(fs->image + file_inode.extent_table * A1FS_BLOCK_SIZE + sizeof(a1fs_extent) * extent_idx);
 	// check where we want to write in

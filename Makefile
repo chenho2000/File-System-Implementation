@@ -39,33 +39,34 @@ clean:
 setup:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 16 image
+	./a1fs image /tmp/chenho92
 
 debug:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 16 image
-	gdb --args ./a1fs image /tmp/userid -d
+	gdb --args ./a1fs image /tmp/chenho92 -d
 
 test:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 16 image
-	./a1fs image /tmp/userid
-	stat -f /tmp/userid
-	ls -la /tmp/userid
-	touch /tmp/userid/test1
-	touch /tmp/userid/test2
-	touch /tmp/userid/test3
-	rm /tmp/userid/test1
+	./a1fs image /tmp/chenho92
+	stat -f /tmp/chenho92
+	ls -la /tmp/chenho92
+	touch /tmp/chenho92/test1
+	touch /tmp/chenho92/test2
+	touch /tmp/chenho92/test3
+	rm /tmp/chenho92/test1
 
 touch:
-	touch /tmp/userid/test
+	touch /tmp/chenho92/test
 testdir:
 	truncate -s 409600 image
 	./mkfs.a1fs -i 16 image
-	./a1fs image /tmp/userid
-	stat -f /tmp/userid
-	ls -la /tmp/userid
-	mkdir /tmp/userid/csc369
+	./a1fs image /tmp/chenho92
+	stat -f /tmp/chenho92
+	ls -la /tmp/chenho92
+	mkdir /tmp/chenho92/csc369
 
 c:
 	rm image
-	fusermount -u /tmp/userid
+	fusermount -u /tmp/chenho92
