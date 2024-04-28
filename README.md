@@ -1,4 +1,5 @@
 # File System Implementation
+*This repository stores work done by Hongyu Chen and Ming Gong in CSC369 Operating Systems.*
 SB: Super Block, IB: Inode Bitmap, DB: Data Bitmap, I: Inode Table, D: Data Block
 
 ![image](https://github.com/chenho2000/File-System-Implementation/assets/60719036/339c4727-9eb3-40bf-8ade-04ede7bc02aa)
